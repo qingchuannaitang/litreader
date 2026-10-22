@@ -8,7 +8,7 @@ import threading
 
 from PySide6.QtCore import QObject, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout, QHBoxLayout, QLineEdit, QMessageBox, QStackedWidget,
+from PySide6.QtWidgets import (QCheckBox, QComboBox, QFrame, QGridLayout, QHBoxLayout, QLineEdit, QMessageBox, QStackedWidget,
                                QVBoxLayout, QWidget)
 
 from .. import calibration, secrets
@@ -21,6 +21,7 @@ from .widgets import Segmented, button, card, clear, hrow, label, page, pill
 ROLE_EN = {"writer": "writer", "vision": "vision", "judge": "judge"}
 ROLE_HINT = {"writer": "写笔记正文（最贵、最重要）", "vision": "看图表（需要支持图片输入的模型）",
              "judge": "交叉核对原文、机翻候选题名"}
+VISION_OPTIONAL = "可选：留空则跳过看图，笔记只依据图注与正文（更省钱、更快，但没有「主要发现」读图和读图核对）"
 
 
 def preset_for_slot(s: M.Slot) -> dict:
@@ -231,6 +232,8 @@ class SlotCard(QFrame):
                    key_ref=self._effective_key_ref(), price_in=num(self.pin), price_out=num(self.pout),
                    json_mode=old.json_mode if old else None, max_tokens=old.max_tokens if old else None,
                    timeout_s=old.timeout_s if old else None, extra_body=old.extra_body if old else None)
+        if old and (old.model, old.url) == (s.model, s.url):   # G12-3: the user's 支持看图 mark follows the same model only
+            s.supports_vision = old.supports_vision
         s.validate(f"{M.ROLES[self.role]}")
         return s
 
@@ -303,6 +306,84 @@ class SlotCard(QFrame):
                             f"{('：' + r['detail']) if r.get('detail') else ''}"
                             f"{('　提示：' + r['hint']) if r.get('hint') else ''}")
 
+
+
+SHARE_LABEL = "与主笔共用（看图直接使用主笔的主用模型和 Key，不用再单独配置）"
+
+
+class VisionShare(QWidget):
+    """G12-3: 「与主笔共用」 on the 看图 tab. Only allowed when the 主笔 主用 slot is marked supports_vision — a mark the
+    USER sets after checking the vendor's docs (the program has no list of vision models and does not guess)."""
+
+    def __init__(self, owner: "ModelsPage", editor: "RoleEditor"):
+        super().__init__()
+        self.owner, self.editor = owner, editor
+        v = QVBoxLayout(self)
+        v.setContentsMargins(0, 0, 0, 0)
+        v.setSpacing(6)
+        self.share = QCheckBox(SHARE_LABEL)
+        self.share.toggled.connect(self._share_toggled)
+        self.confirm = QCheckBox("")
+        self.confirm.toggled.connect(self._confirm_toggled)
+        self.msg = label("", "sub")
+        v.addWidget(self.share)
+        v.addWidget(self.confirm)
+        v.addWidget(self.msg)
+        self.sync()
+
+    def writer(self) -> M.Slot | None:
+        w = self.owner.ms.roles["writer"]
+        return w[0] if w else None
+
+    def sync(self, note: str = ""):
+        ms, w = self.owner.ms, self.writer()
+        on = ms.vision_share == "writer" and w is not None
+        for cb, val in ((self.share, on), (self.confirm, bool(w and w.supports_vision is True))):
+            cb.blockSignals(True)
+            cb.setChecked(val)
+            cb.blockSignals(False)
+        self.confirm.setVisible(w is not None and (w.supports_vision is not True or not on))
+        if w is not None:
+            self.confirm.setText(f"我已在厂商文档确认「{w.vendor} {w.model}」支持图片输入，把它标记为「支持看图」")
+        self.editor.setVisible(not on)
+        if on:
+            text = (f"✅ 看图使用主笔主用：{w.vendor} {w.model}（Key：钥匙串里的 {w.key_ref}，与主笔同一把，本次打开只读一次）。"
+                    + ("原来单独配置的看图模型仍保存着，关闭共用即恢复使用。" if ms.roles["vision"] else ""))
+        elif w is None:
+            text = "要共用，请先在「主笔」页签设置主用模型。"
+        elif w.supports_vision is not True:
+            text = (f"主笔主用「{w.vendor} {w.model}」还没有标记为支持看图。程序不内置哪些模型能看图："
+                    "请先查厂商文档，确认这个模型支持图片输入后，勾选上面的确认框，再打开「与主笔共用」。")
+        else:
+            text = f"主笔主用「{w.vendor} {w.model}」已标记支持看图，可以打开「与主笔共用」。"
+        self.msg.setText(note + text)
+
+    def _save(self) -> bool:
+        try:
+            self.owner.save()
+        except (ConfigError, OSError) as e:
+            self.sync(f"❌ 保存失败：{e}　")
+            return False
+        return True
+
+    def _share_toggled(self, on: bool):
+        w = self.writer()
+        if on and (w is None or w.supports_vision is not True):
+            self.sync("❌ 不能共用：")
+            return
+        self.owner.ms.vision_share = "writer" if on else None
+        if self._save():
+            self.sync("✅ 已保存。" if on else "✅ 已关闭共用，看图使用下面单独配置的模型（没有配置则跳过看图）。")
+
+    def _confirm_toggled(self, on: bool):
+        w = self.writer()
+        if w is None:
+            return self.sync()
+        w.supports_vision = True if on else None
+        if not on:
+            self.owner.ms.vision_share = None
+        if self._save():
+            self.sync("✅ 已保存标记。" if on else "✅ 已取消「支持看图」标记，并关闭共用。")
 
 
 class RoleEditor(QWidget):
@@ -406,6 +487,11 @@ class ModelsPage(QWidget):
             cl.addWidget(label(f"{ROLE_HINT[role]}。程序不内置模型列表，也不内置价格：模型名、单价都从厂商文档复制填写；"
                                "选厂商会预填官方 Base URL。校准按“厂商 + 模型名 + 角色”分别记录在本机（应用支持目录，不在 Obsidian 库里）。",
                                "sub"))
+            if role == "vision":
+                self.vision_optional = label(VISION_OPTIONAL, "info")
+                cl.addWidget(self.vision_optional)
+                self.vision_share = VisionShare(self, ed)
+                cl.addWidget(self.vision_share)
             cl.addWidget(ed)
             self._tab_index[role] = self.stack.count()
             self.stack.addWidget(_top(c))
@@ -416,7 +502,13 @@ class ModelsPage(QWidget):
         lay.addWidget(self.stack, 1)
 
     def save(self):
+        sv = self.ms.shared_vision_slot()
+        if self.ms.vision_share and (sv is None or sv.supports_vision is not True):
+            self.ms.vision_share = None      # 主笔主用 changed/removed: 共用 can no longer apply -> switch it off
         M.save(self.ms, self.path)
+        vs = getattr(self, "vision_share", None)
+        if vs is not None:
+            vs.sync()
 
 
 def _top(w: QWidget) -> QWidget:

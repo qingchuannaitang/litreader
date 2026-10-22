@@ -1,6 +1,6 @@
 {
-  "version": "1.0.2",
-  "notes": "v1.0.2：启动时不再逐个读取钥匙串，弹窗大幅减少；推定图标题更具体；LICENSE 改为标准 AGPL-3.0；README 增加 .app 安装说明",
+  "version": "1.0.3",
+  "notes": "v1.0.3：看图模型改为可选（留空即跳过），可与主笔共用；README 增加启动台与程序坞说明",
   "download_url": "https://github.com/qingchuannaitang/litreader/releases/latest",
   "qq_group": "1126184965"
 }

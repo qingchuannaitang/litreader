@@ -33,6 +33,7 @@ KIND_TITLE = {"candidate": "选择论文", "pdf": "选择 PDF 附件", "consent"
               "template": "确认模板", "modules": "调整专业模块", "author": "作者顺序冲突：文件名用哪位作者区分？",
               "topic_folder": "放进哪个主题文件夹？", "confirm": "请确认", "project": "关联课题（只问一次）", "text": "需要你回答"}
 CARD_KINDS = {"candidate", "pdf", "template", "modules", "topic_folder", "project"}
+VISION_SKIPPED = "已跳过（未配置看图模型）"
 ROLE_ORDER = [("vision", "看图"), ("writer", "主笔"), ("judge", "交叉核对"), ("lens", "项目视角")]
 NUM_RE = re.compile(r"(?<![\w#])(\d[\d,]*(?:\.\d+)?%?|¥\d[\d,.]*)")
 
@@ -886,6 +887,10 @@ class FlowPage(QWidget):
         for role, zh in ROLE_ORDER:
             r = self.prog_roles.get(role)
             node = self.nodes.state.get(role)
+            if role == "vision" and node == "skip" and not r:   # G12-1: vision is optional
+                self.detail.addLayout(hrow(label(zh, "strong", wrap=False), None,
+                                           label(VISION_SKIPPED, "muted", wrap=False)))
+                continue
             if not r and node not in ("running", "done"):
                 continue
             r = r or {"done": 0, "total": 1}

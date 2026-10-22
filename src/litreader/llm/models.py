@@ -25,6 +25,8 @@ STATION = {"writer": "extract", "vision": "vision", "judge": "judge"}
 ROLE_ALIASES = {"主笔": "writer", "看图": "vision", "交叉核对": "judge", "writer": "writer", "vision": "vision",
                 "judge": "judge", "text": "writer"}
 SLOT_NAMES = ["主用", "备用1", "备用2", "备用3"]
+SHARED_VISION_ID = "vision_shared"
+SHARE_TARGETS = {"writer"}
 
 
 @dataclass
@@ -39,6 +41,7 @@ class Slot:
     max_tokens: int | None = None
     timeout_s: float | None = None
     extra_body: dict | None = None
+    supports_vision: bool | None = None   # G12-3: user-confirmed (from vendor docs); only used for 「与主笔共用」
 
     def validate(self, where: str) -> None:
         for k in ("vendor", "model", "url", "key_ref"):
@@ -57,11 +60,19 @@ class Slot:
 @dataclass
 class ModelSettings:
     roles: dict[str, list[Slot]] = field(default_factory=lambda: {r: [] for r in ROLES})
+    vision_share: str | None = None       # G12-3: "writer" = 看图 uses the 主笔 主用 slot ([share] vision = "writer")
+
+    def shared_vision_slot(self) -> Slot | None:
+        if self.vision_share == "writer" and self.roles["writer"]:
+            return self.roles["writer"][0]
+        return None
 
     def slot_id(self, role: str, i: int) -> str:
         return f"{role}{i + 1}"
 
     def find(self, provider_id: str) -> Slot | None:
+        if self.vision_share == "writer" and provider_id == SHARED_VISION_ID:
+            return self.shared_vision_slot()
         for r, slots in self.roles.items():
             for i, s in enumerate(slots):
                 if self.slot_id(r, i) == provider_id:
@@ -70,7 +81,11 @@ class ModelSettings:
 
     def to_llm_config(self, require_writer: bool = True) -> LLMConfig:
         provs, stations = {}, {}
+        if self.vision_share is not None and self.vision_share not in SHARE_TARGETS:
+            raise ConfigError(f"[share] vision 只能是 writer（与主笔共用），不是 {self.vision_share!r}")
         for role, slots in self.roles.items():
+            if role == "vision" and self.vision_share:
+                continue          # stored vision slots are kept but not used while 「与主笔共用」 is on
             if len(slots) > MAX_CHAIN:
                 raise ConfigError(f"{ROLES[role]}：最多 1 个主用 + 3 个备用")
             ids = []
@@ -90,6 +105,15 @@ class ModelSettings:
                 ids.append(pid)
             if ids:
                 stations[STATION[role]] = ids
+        sv = self.shared_vision_slot()
+        if sv is not None:
+            if sv.supports_vision is not True:
+                raise ConfigError("看图「与主笔共用」：主笔主用模型未标记为支持看图（请先在厂商文档确认后勾选「支持看图」）")
+            pre = presets.by_url(sv.url) or {}
+            provs[SHARED_VISION_ID] = ProviderConfig(
+                SHARED_VISION_ID, "openai_compatible", sv.url.rstrip("/"), sv.model, sv.key_ref, True,
+                180.0, sv.extra_body if sv.extra_body is not None else pre.get("extra_body"), False, 2048)
+            stations["vision"] = [SHARED_VISION_ID]
         if require_writer and "extract" not in stations:
             raise ConfigError("主笔模型未设置：运行 litreader models set 主笔")
         return LLMConfig(provs, stations)
@@ -106,6 +130,10 @@ def load(path: Path) -> ModelSettings:
         for r in rows:
             ms.roles[role].append(Slot(**{k: r.get(k) for k in Slot.__dataclass_fields__ if k in r}
                                        | {k: r.get(k, "") for k in ("vendor", "model", "url", "key_ref")}))
+    share = d.get("share") or {}
+    if not isinstance(share, dict):
+        raise ConfigError("models.toml: [share] 应是一个表")
+    ms.vision_share = share.get("vision") or None
     ms.to_llm_config(require_writer=False)  # validate slots
     return ms
 
@@ -134,6 +162,9 @@ def dumps(ms: ModelSettings) -> str:
                     out.append(f"{k} = {_val(v)}")
             out.append("")
         out.append("")
+    if ms.vision_share:
+        out += ["# ===== 共用（G12）：看图与主笔共用主笔的主用模型和 Key（旧版本会忽略这一节）=====", "[share]",
+                f"vision = {_val(ms.vision_share)}", ""]
     return "\n".join(out)
 
 

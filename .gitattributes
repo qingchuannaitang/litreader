@@ -19,3 +19,4 @@ spikes/** export-ignore
 zh.dtd export-ignore
 src/litreader.egg-info/** export-ignore
 docs/G11_PROGRESS.md export-ignore
+docs/G12_PROGRESS.md export-ignore

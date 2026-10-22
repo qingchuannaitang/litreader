@@ -14,7 +14,7 @@ litreader 是一个 macOS 桌面工具（GUI，图形界面）。你用一句话
 
 不想用命令行的话，直接下载打包好的 Mac 应用：
 
-1. 打开 [Releases（发布页）](https://github.com/qingchuannaitang/litreader/releases/latest)，下载 `Litreader-<版本>-mac.zip`（如 `Litreader-1.0.2-mac.zip`），双击解压得到 `Litreader.app`。
+1. 打开 [Releases（发布页）](https://github.com/qingchuannaitang/litreader/releases/latest)，下载 `Litreader-<版本>-mac.zip`（如 `Litreader-1.0.3-mac.zip`），双击解压得到 `Litreader.app`。
 2. 把 `Litreader.app` 拖进「应用程序」（Applications）文件夹。如果里面已有旧版，先删掉旧的再拖入，否则会变成「Litreader 2.app」。
 3. 第一次双击时，macOS 会提示「无法验证开发者」或「Apple 无法检查其是否包含恶意软件」（本应用暂未做苹果签名与公证）。**点「完成」，不要点「移到废纸篓」**，然后用下面任一方法打开：
    - **方法一（系统设置）：** 打开「系统设置 → 隐私与安全性」，拉到最下面，看到「已阻止 Litreader」，点「仍要打开」，输入开机密码确认。
@@ -26,6 +26,19 @@ litreader 是一个 macOS 桌面工具（GUI，图形界面）。你用一句话
 
 运行要求同下：Zotero 7（打开「允许其他应用程序与 Zotero 通讯」）、一个 Obsidian 库、你自己的 API Key。
 
+### 在「App」/启动台和程序坞中找到 Litreader
+
+- macOS 的「App」启动器（以前叫「启动台」Launchpad）会自动显示「应用程序」文件夹里的所有应用，所以把 `Litreader.app` 放进「应用程序」后，它就会出现在那里，不用另外添加。
+- 如果「应用程序」里出现了「Litreader 2.app」，说明之前已有一个 Litreader：删掉多出来的那个（或旧版），只保留一个 `Litreader.app`。
+- 也可以用终端放进去（假设解压在「下载」文件夹）：
+  ```bash
+  rm -rf "/Applications/Litreader 2.app"
+  ditto ~/Downloads/Litreader.app /Applications/Litreader.app
+  xattr -dr com.apple.quarantine /Applications/Litreader.app
+  ```
+  第一行删掉多出来的「Litreader 2」，第二行把应用复制进「应用程序」，第三行去掉下载隔离标记，免得打开时被拦。
+- **固定到程序坞（Dock）：** 打开 Litreader 后，右键程序坞里的图标，选「选项 → 在程序坞中保留」。
+
 ## 运行要求（Requirements）
 
 - macOS（Apple Silicon 或 Intel），Python 3.11 及以上（推荐用 Homebrew 安装 `python@3.12`）
@@ -33,10 +46,15 @@ litreader 是一个 macOS 桌面工具（GUI，图形界面）。你用一句话
 - 一个 Obsidian 库（vault，库文件夹）
 - 你自己的 API Key（接口密钥）：大模型（如 DeepSeek）、MinerU Token；看图模型可选
 
+### 看图模型是可选的
+
+「模型设置 → 看图」可以留空：留空时精读流程跳过看图，图表照样裁剪、显示原图和图注，笔记只依据图注与正文（标注「依据图注与正文，未经视觉模型看图」）。这样更省钱、更快，但没有「主要发现」读图和读图核对。
+如果你的主笔模型本身支持图片输入，可以在看图页打开「与主笔共用」，看图直接使用主笔的主用模型和同一把 Key。程序不内置哪些模型能看图：请先在厂商文档确认，再勾选「支持看图」。
+
 ## 命令行安装（Install from source）
 
 ```bash
-cd ~ && unzip -o -q ~/Downloads/litreader-1.0.2.zip   # 或：git clone https://github.com/qingchuannaitang/litreader.git
+cd ~ && unzip -o -q ~/Downloads/litreader-1.0.3.zip   # 或：git clone https://github.com/qingchuannaitang/litreader.git
 cd ~/litreader
 python3 -m venv .venv
 ./.venv/bin/pip install -e ".[mac,gui]"

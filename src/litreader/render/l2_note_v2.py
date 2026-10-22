@@ -18,6 +18,7 @@ from ..analysis.chunking import block_text
 from .protected_zone import BEGIN, END
 
 NO_VISION = "依据图注与正文，未经视觉模型看图"
+NO_VISION_TITLE = "无图注、未经看图——请看原页"
 
 
 class Ctx:
@@ -637,7 +638,12 @@ def render(v2, *, blocks, manifest, vision_obs, figure_paths, attachment_key, pa
             if not short:   # G11-2: vision unavailable -> the note's own verified fact about this figure's page(s)
                 fpages = {p["physical_page"] for p in m["parts"]}
                 short = next((t for x in page_statements(v2.data, c.page, fpages) for t in [text_topic(x)] if t), "")
-            ttl = questionize(short) if short else f"这张{'图' if m['kind'] == 'figure' else '表'}显示了什么？"
+            if short:
+                ttl = questionize(short)
+            elif not (vision_obs or {}).get(f["id"]):   # G12-4: no caption, no vision reading, no text -> say so
+                ttl = NO_VISION_TITLE
+            else:
+                ttl = f"这张{'图' if m['kind'] == 'figure' else '表'}显示了什么？"
         out = [f"### {num}{early_hint.get(f['id'], '')}｜{ttl}", ""]
         for row in figure_rows(m["parts"], figure_paths.get(f["id"], [])):
             out.append(" ".join(f"![[{p}|{w}]]" for p, w in row))
