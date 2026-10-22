@@ -49,7 +49,7 @@ def test_parser_card_save_disabled_then_saved_and_test(app, monkeypatch):
     from litreader.gui.models_page import PARSER_CARDS, ParserCard
     req, seen = fake(-60012)
     c = ParserCard(*PARSER_CARDS[0], req=req)
-    assert not c.save_btn.isEnabled() and not c.test_btn.isEnabled()
+    assert not c.save_btn.isEnabled() and c.status.text() == "未读取（用到时再读）"   # G11: no read at render
     c.edit.setText("tok-123456789012345")
     assert c.save_btn.isEnabled()
     c.save()

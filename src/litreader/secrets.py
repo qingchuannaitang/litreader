@@ -2,10 +2,65 @@
 Values are never printed or written to files. keyring is optional (pip install keyring)."""
 from __future__ import annotations
 
+import json
 import os
 from collections.abc import Mapping
+from pathlib import Path
 
 SERVICE = "litreader"
+
+# G11-1: lazy, at-most-once keychain access per process. A packaged .app that is not the program which stored the
+# keys makes macOS ask once per read, so: never read at startup/page render, cache successful reads for the process
+# lifetime, and remember a denied/failed read (no retry loop) until the user explicitly retries.
+_STATE: dict = {"src": None, "vals": {}, "denied": {}}
+
+
+def _session(kr=None):
+    src = globals()["_keyring"]
+    if _STATE["src"] is not src:            # backend provider swapped (tests use fakes) -> fresh session cache
+        _STATE.update(src=src, vals={}, denied={})
+    return _STATE
+
+
+def reset_session() -> None:
+    _STATE.update(src=None, vals={}, denied={})
+
+
+def forget_denied(name: str) -> None:
+    """Explicit user retry (e.g. 测试连接 clicked again) may ask the keychain once more."""
+    _STATE["denied"].pop(name, None)
+
+
+def _index_path() -> Path:
+    p = os.environ.get("LITREADER_KEY_INDEX")
+    if p:
+        return Path(p)
+    from .appconfig import default_data_dir
+    return default_data_dir() / "key_names.json"
+
+
+def _index() -> set:
+    try:
+        return set(json.loads(_index_path().read_text(encoding="utf-8")))
+    except Exception:  # noqa: BLE001
+        return set()
+
+
+def _index_set(name: str, present: bool) -> None:
+    """Names only (never values): lets the settings page show 「已保存（未读取）」 without touching the keychain."""
+    try:
+        idx = _index()
+        if (name in idx) == present:
+            return
+        if present:
+            idx.add(name)
+        else:
+            idx.discard(name)
+        path = _index_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(sorted(idx)), encoding="utf-8")
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def _keyring():
@@ -33,10 +88,38 @@ def lookup(name: str) -> str | None:
     kr = _keyring()
     if kr is None:
         return None
+    st = _session(kr)
+    if name in st["vals"]:
+        return st["vals"][name]
+    if name in st["denied"]:
+        raise st["denied"][name]
     try:
-        return kr.get_password(SERVICE, name) or None
+        v = kr.get_password(SERVICE, name) or None
     except Exception as e:  # noqa: BLE001
-        raise KeychainError(name, e) from None
+        err = KeychainError(name, e)
+        st["denied"][name] = err
+        raise err from None
+    if v:
+        st["vals"][name] = v
+    _index_set(name, bool(v))
+    return v
+
+
+def status(name: str) -> str:
+    """Key status WITHOUT reading the keychain: env | saved (read OK this session) | denied | indexed (stored, not
+    read yet) | unknown (maybe stored before the index existed — read only when first needed)."""
+    if os.environ.get(name):
+        return "env"
+    st = _session()
+    if name in st["vals"]:
+        return "saved"
+    if name in st["denied"]:
+        return "denied"
+    return "indexed" if name in _index() else "unknown"
+
+
+STATUS_ZH = {"env": "来自环境变量", "saved": "已保存", "denied": "钥匙串读取被拒绝",
+             "indexed": "已保存（未读取）", "unknown": "未读取（用到时再读）"}
 
 
 def get(name: str) -> str | None:
@@ -52,6 +135,10 @@ def set_secret(name: str, value: str) -> None:
     if kr is None:
         raise RuntimeError("keyring 未安装：请先运行 pip install keyring")
     kr.set_password(SERVICE, name, value)
+    st = _session(kr)
+    st["vals"][name] = value
+    st["denied"].pop(name, None)
+    _index_set(name, True)
 
 
 def delete(name: str) -> None:
@@ -61,6 +148,8 @@ def delete(name: str) -> None:
             kr.delete_password(SERVICE, name)
         except Exception:
             pass
+        _session(kr)["vals"].pop(name, None)
+    _index_set(name, False)
 
 
 def selftest() -> tuple[bool, str]:

@@ -75,6 +75,7 @@ def cached_observe(fig: dict, assets_root: Path, chain, transport, env, cache_di
     model = _re.sub(r"[^A-Za-z0-9._-]+", "_", chain[0].model)
     key = f"{_re.sub(r'[^A-Za-z0-9]+', '_', item_key)}_{_re.sub(r'[^A-Za-z0-9]+', '_', fig['id'])}_{figure_hash(fig, assets_root)}_{model}"
     f = Path(cache_dir) / f"{key}.json"
+    stale = None
     if f.is_file():
         try:
             d = json.loads(f.read_text("utf-8"))
@@ -83,9 +84,12 @@ def cached_observe(fig: dict, assets_root: Path, chain, transport, env, cache_di
             # source of a specific heading, so that one figure is read again (a few cents); others reuse the cache.
             if "title" in d["obs"] or (fig.get("caption") or "").strip():
                 return d["obs"], info
+            stale = (d["obs"], info)
         except (ValueError, KeyError, TypeError):
             pass
     obs, info = observe(fig, assets_root, chain, transport, env)
+    if not obs and stale:   # G11-2: a failed title re-read must not throw away the finding we already paid for
+        return stale[0], dict(stale[1], refresh_failed=info.get("status"))
     if obs and info.get("status") == "OK":
         f.parent.mkdir(parents=True, exist_ok=True)
         f.write_text(json.dumps({"obs": obs, "info": info}, ensure_ascii=False), "utf-8")

@@ -10,7 +10,7 @@ from datetime import date, datetime, timedelta
 
 # TODO-configurable placeholders (not real yet): the GitHub repo is not created and the VPS has no domain yet.
 DEFAULT_URLS = [
-    "https://raw.githubusercontent.com/qingchuannaitang/litreader/main/latest.json",   # TODO placeholder
+    "https://raw.githubusercontent.com/qingchuannaitang/litreader/main/latest.json",   # live since v1.0.1 (repo root latest.json)
     "https://example.invalid/litreader/latest.json",                                   # TODO placeholder (VPS)
 ]
 DEFAULT_QQ_GROUP = "1126184965"

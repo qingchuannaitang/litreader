@@ -335,6 +335,37 @@ def vision_topic(finding: str, n: int = 24) -> str:
     return ""
 
 
+def text_topic(t: str, n: int = 24) -> str:
+    """G11-2: a heading topic from a Chinese note sentence about the same page (e.g. a verified result fact):
+    first specific clause, cut before numbers / brackets, trailing copulas removed. "" if nothing usable."""
+    for cl in re.split(r"[。；;！!？?\n，,]", clean(t or "")):
+        cl = re.split(r"[\d（(\[【]", cl.strip(), maxsplit=1)[0]
+        cl = re.sub(r"(?:为|是|达|约|从|由|在|的|和|与|及|、|：|:|\s)+$", "", cl.strip())
+        if len(re.findall(r"[\u4e00-\u9fff]", cl)) >= 6 and not generic_topic(cl):
+            return cl[:n].rstrip("的和与及、")
+    return ""
+
+
+def page_statements(data, page_of: dict, pages: set) -> list[str]:
+    """G11-2: texts of validated note statements ({"text", "basis_block_ids"}) whose basis blocks lie on `pages`,
+    in note order — the note's own (Chinese, verified) discussion of what is on a figure's page."""
+    out: list[str] = []
+
+    def walk(x):
+        if isinstance(x, dict):
+            ids = x.get("basis_block_ids")
+            if isinstance(x.get("text"), str) and isinstance(ids, list) and any(page_of.get(i) in pages for i in ids):
+                out.append(x["text"])
+            for k, y in x.items():
+                if not str(k).startswith("_"):
+                    walk(y)
+        elif isinstance(x, list):
+            for y in x:
+                walk(y)
+    walk(data)
+    return out
+
+
 def _claim_key(t: str) -> str:
     return _PUNCT.sub("", clean(t or "")).lower()
 
@@ -603,6 +634,9 @@ def render(v2, *, blocks, manifest, vision_obs, figure_paths, attachment_key, pa
                 o = (vision_obs or {}).get(f["id"]) or {}   # else the first specific clause of the vision reading
                 short = next((t for t in (vision_topic(o.get("title") or ""), vision_topic(f.get("finding") or ""),
                                           vision_topic(o.get("finding") or "")) if t), "")
+            if not short:   # G11-2: vision unavailable -> the note's own verified fact about this figure's page(s)
+                fpages = {p["physical_page"] for p in m["parts"]}
+                short = next((t for x in page_statements(v2.data, c.page, fpages) for t in [text_topic(x)] if t), "")
             ttl = questionize(short) if short else f"这张{'图' if m['kind'] == 'figure' else '表'}显示了什么？"
         out = [f"### {num}{early_hint.get(f['id'], '')}｜{ttl}", ""]
         for row in figure_rows(m["parts"], figure_paths.get(f["id"], [])):

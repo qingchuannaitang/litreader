@@ -472,14 +472,14 @@ def test_parser_tokens_saved_to_keychain_never_displayed(app, tmp_path, kr, monk
     mineru, paddle = card.rows
     assert (mineru.ref, paddle.ref) == ("MINERU_API_TOKEN", "PADDLE_API_KEY")
     assert mineru.token_url == "https://mineru.net/apiManage/token" and paddle.token_url == "https://aistudio.baidu.com/index/accessToken"
-    assert mineru.status.text() == "未保存" and mineru.edit.echoMode() == mineru.edit.EchoMode.Password
+    assert mineru.status.text() == "未读取（用到时再读）" and mineru.edit.echoMode() == mineru.edit.EchoMode.Password
     texts = "\n".join(_labels(card))
     assert "当前使用" in texts and "尚未接入" in texts and "接口文档 ↗" in texts
     secret = "fake-mineru-" + "x" * 12                                   # fake value; nothing real
     mineru.edit.setText(secret)
     mineru.save()
     assert kr.get_password("litreader", "MINERU_API_TOKEN") == secret
-    assert mineru.edit.text() == "" and mineru.status.text() == "钥匙串已保存" and paddle.status.text() == "未保存"
+    assert mineru.edit.text() == "" and mineru.status.text() == "钥匙串已保存" and paddle.status.text() == "未读取（用到时再读）"
     assert not mineru.edit.isEnabled()
     mineru._unlock()
     assert mineru.edit.isEnabled()
@@ -553,7 +553,7 @@ def test_sidebar_version_and_appearance_toggle_persist(app, tmp_path, kr):
     from litreader.gui.prefs import Prefs
     cfg, kw, _ = gui_fakes.environment(tmp_path)
     win = MainWindow(cfg=cfg, run_kwargs=kw, data_dir=tmp_path / "guidata")
-    assert win.version_label.text() == f"Litreader v{__version__}" and __version__ == "1.0.1"
+    assert win.version_label.text() == f"Litreader v{__version__}" and __version__ == "1.0.2"
     assert list(win.appearance_seg.buttons) == ["light", "dark", "system"]
     assert [b.text() for b in win.appearance_seg.buttons.values()] == ["浅色", "深色", "跟随系统"]
     win.appearance_seg.buttons["dark"].click()

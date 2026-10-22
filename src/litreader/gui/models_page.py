@@ -186,12 +186,15 @@ class SlotCard(QFrame):
 
     def _show_key_ref(self):
         ref = self._effective_key_ref()
-        has = bool(secrets.get(ref))
+        st = secrets.status(ref)          # G11-1: never reads the keychain while rendering
+        has = st in ("env", "saved", "indexed")
         self.key.clear()
         self.key.setEnabled(not has)
         self.change_key.setVisible(has)
-        self.key.setPlaceholderText("•••••••••••• 已保存" if has else "粘贴 API Key（只存进系统钥匙串，不写进任何文件）")
-        self.key_ref.setText(f"钥匙串：{ref} · {'已保存' if has else '未保存'}")
+        self.key.setPlaceholderText("•••••••••••• 已保存" if has else
+                                    ("粘贴 API Key；留空 = 保留钥匙串里原有的（未读取，用到时再读）" if st == "unknown"
+                                     else "粘贴 API Key（只存进系统钥匙串，不写进任何文件）"))
+        self.key_ref.setText(f"钥匙串：{ref} · {secrets.STATUS_ZH[st]}")
 
     def _unlock_key(self):
         self.key.setEnabled(True)
@@ -284,6 +287,7 @@ class SlotCard(QFrame):
         self.status.setText("… 正在测试（一次很小的请求）")
         self.test_btn.setEnabled(False)
         tx = self.owner.transport
+        secrets.forget_denied(p.key_env)   # explicit click = one fresh read of THIS role's key only
 
         def work():
             try:
@@ -500,25 +504,29 @@ class ParserCard(QFrame):
         import os
         if os.environ.get(self.ref):
             return "env"
-        return "saved" if secrets.get(self.ref) else "missing"
+        st = secrets.status(self.ref)     # G11-1: no keychain read while rendering
+        return {"saved": "saved", "indexed": "indexed", "denied": "denied", "unknown": "unknown"}[st]
 
     def refresh(self):
         st = self.state()
-        text, kind = {"env": ("来自环境变量", "info"), "saved": ("钥匙串已保存", "ok"), "missing": ("未保存", "trial")}[st]
+        text, kind = {"env": ("来自环境变量", "info"), "saved": ("钥匙串已保存", "ok"),
+                      "indexed": ("已保存（未读取）", "ok"), "unknown": ("未读取（用到时再读）", "gray"),
+                      "denied": ("钥匙串读取被拒绝", "stop"), "missing": ("未保存", "trial")}[st]
         self.status.setText(text)
         self.status.setProperty("role", f"pill_{kind}")
         from .widgets import repolish
         repolish(self.status)
-        has = st != "missing"
+        has = st in ("env", "saved", "indexed")
         self.edit.clear()
         self.edit.setEnabled(not has)
         self.change.setVisible(has)
         self.save_btn.setVisible(not has)
         self.edit.setPlaceholderText("•••••••••••••••• 已保存" if has else "粘贴 Token（只存进系统钥匙串，不写进任何文件）")
         self.save_btn.setEnabled(False)
-        self.test_btn.setEnabled(has)
+        self.test_btn.setEnabled(st != "missing")
 
     def test(self):
+        secrets.forget_denied(self.ref)   # explicit click = one fresh read of this token only
         tok = secrets.get(self.ref) or ""
         self._set_tested("… 正在测试", "gray")
         self.test_btn.setEnabled(False)
@@ -543,6 +551,7 @@ class ParserCard(QFrame):
         repolish(self.tested)
 
     def _show_test(self, ok, msg):
+        self.refresh()                     # status pill reflects what the read just learned
         self._set_tested({True: "✅ 连接正常", False: "❌ 未通过", None: "ℹ 无法确认"}[ok], {True: "ok", False: "stop", None: "info"}[ok])
         self._say(msg)
         self.test_btn.setEnabled(True)

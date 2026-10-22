@@ -3,6 +3,20 @@ import os
 import pytest
 
 os.environ.setdefault("LITREADER_NO_UPDATE_CHECK", "1")   # G8-9: tests never touch the network
+import tempfile  # noqa: E402
+
+os.environ["LITREADER_KEY_INDEX"] = os.path.join(tempfile.mkdtemp(prefix="litreader-keyidx-"), "key_names.json")
+
+
+@pytest.fixture(autouse=True)
+def _fresh_key_session():
+    from litreader import secrets
+    secrets.reset_session()
+    try:
+        os.remove(os.environ["LITREADER_KEY_INDEX"])
+    except OSError:
+        pass
+    yield
 
 from litreader.publish.store import PaperIdentity
 from litreader.render.protected_zone import empty_zone
