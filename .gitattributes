@@ -1,0 +1,20 @@
+# Default build (git archive -> dist/litreader.zip) leaves out the old shiba meme artwork
+# (copyright risk). Files stay in history and in the repo; they are just not shipped or used.
+assets/app_icon.png export-ignore
+assets/app_icon_128.png export-ignore
+docs/design/ui_prototype/litreader_ui_prototype.html export-ignore
+# G9-4: internal development records stay in the private master history but are not shipped / published.
+ROADMAP.md export-ignore
+ROADMAP_v2.md export-ignore
+docs/G6_PROGRESS.md export-ignore
+docs/G7_PROGRESS.md export-ignore
+docs/G8_PROGRESS.md export-ignore
+docs/G9_PROGRESS.md export-ignore
+docs/G10_PROGRESS.md export-ignore
+docs/STAGE_LOG.md export-ignore
+docs/MAINTENANCE_PLAN.md export-ignore
+docs/design/COMMERCIAL_PLAN.md export-ignore
+docs/spikes/** export-ignore
+spikes/** export-ignore
+zh.dtd export-ignore
+src/litreader.egg-info/** export-ignore

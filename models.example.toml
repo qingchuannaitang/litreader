@@ -1,0 +1,27 @@
+# litreader 模型设置示例。复制为 models.toml（已被 .gitignore 忽略），或直接用 `litreader models set 主笔`。
+# 每个角色：第 1 个 [[角色]] 为主用，其后最多 3 个备用（按顺序自动切换）。
+# 四个字段：vendor 厂商名称（随便写，只用于显示）、model 模型名（你从厂商文档复制）、
+#           url（OpenAI 兼容 Base URL）、key_ref（钥匙串里的 Key 名称；Key 本身不写在这里）。
+# 可选：price_in / price_out = 你自己填写的单价（元/百万 tokens）；不填则只显示 token 估算，不显示费用。
+# 程序不内置模型列表；已核实的 URL 预设只有 DeepSeek、MiniMax 中国站/国际站。
+
+# ===== 主笔（writer）=====
+[[writer]]
+vendor = "DeepSeek"
+model = ""                      # TEXT_MODEL
+url = "https://api.deepseek.com"
+key_ref = "DEEPSEEK_API_KEY"
+
+# ===== 看图（vision）=====
+[[vision]]
+vendor = "MiniMax（中国站）"
+model = ""                      # VISION_MODEL
+url = "https://api.minimaxi.com/v1"
+key_ref = "MINIMAX_API_KEY"
+
+# ===== 交叉核对（judge）=====
+[[judge]]
+vendor = "DeepSeek"
+model = ""                      # TEXT_MODEL
+url = "https://api.deepseek.com"
+key_ref = "DEEPSEEK_API_KEY"

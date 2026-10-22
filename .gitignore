@@ -1,0 +1,52 @@
+# Python / virtualenv
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+# pip / caches
+.cache/
+pip-cache/
+.pip-cache/
+pip-wheel-metadata/
+# build outputs
+dist/
+build/
+*.app
+*.dmg
+*.spec.bak
+# git bundles / backups
+*.bundle
+*.bak
+*.orig
+*~
+*.backup*
+# user data, keys, local config (never commit)
+.env
+.env.*
+config.local.toml
+models.toml
+calibration.json
+receipt-*.json
+.spike_data/
+*.log
+logs/
+# papers, notes and parse outputs
+*.pdf
+*.PDF
+_litreader_试运行/
+/litreader/
+mineru_out/
+notes/
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+zh.dtd

@@ -1,0 +1,34 @@
+[project]
+name = "litreader"
+version = "1.0.1"
+description = "Zotero -> AI reading -> Obsidian (core + CLI, dry-run on Mac)"
+requires-python = ">=3.11"
+license = {text = "AGPL-3.0-or-later"}
+authors = [{name = "王鸿涛 (qingchuannaitang)"}]
+classifiers = ["License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)"]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest"]
+mac = ["keyring>=24"]
+gui = ["PySide6-Essentials>=6.6", "pyobjc-framework-Cocoa>=10; sys_platform == 'darwin'",
+       "pyobjc-framework-UserNotifications>=10; sys_platform == 'darwin'"]
+
+[project.scripts]
+litreader = "litreader.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"litreader.gui" = ["icons/*.svg", "icons/*.txt", "icons/*.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = ["real: real Zotero/Obsidian chain (NOT_RUN in Stage 1)"]
+addopts = "-m 'not real'"
