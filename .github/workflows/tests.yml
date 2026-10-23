@@ -1,0 +1,53 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: pytest (${{ matrix.os }}, py${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+        python: ["3.11"]
+    env:
+      LITREADER_NO_UPDATE_CHECK: "1"
+      QT_QPA_PLATFORM: offscreen
+      # PYTHONUTF8 deliberately NOT set: we want real Windows encoding behaviour.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            python -m pip install -e ".[dev,gui,mac]"
+          else
+            python -m pip install -e ".[dev,gui]"
+          fi
+      - name: Run tests (fakes only; 'real' marker deselected via pyproject addopts)
+        shell: bash
+        continue-on-error: true
+        run: |
+          python -m pytest -q -rA -m "not real" --junitxml=pytest-junit.xml 2>&1 | tee pytest-log.txt
+          exit ${PIPESTATUS[0]}
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-${{ matrix.os }}-py${{ matrix.python }}
+          path: |
+            pytest-junit.xml
+            pytest-log.txt
+          if-no-files-found: warn
