@@ -1,0 +1,38 @@
+name: build-windows
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build
+        shell: pwsh
+        run: ./scripts/build_win.ps1
+      - name: Smoke test (offscreen main window, keyring backend)
+        shell: pwsh
+        run: |
+          $report = Join-Path $env:RUNNER_TEMP "smoke.txt"
+          $p = Start-Process -FilePath "dist\Litreader\Litreader.exe" -ArgumentList "--smoke", "`"$report`"" -PassThru
+          if (-not $p.WaitForExit(120000)) { $p.Kill(); throw "smoke test timed out" }
+          if (Test-Path $report) { Get-Content $report } else { throw "no smoke report" }
+          if ($p.ExitCode -ne 0) { throw "smoke exit code $($p.ExitCode)" }
+          if (-not (Select-String -Path $report -Pattern "WinVaultKeyring" -Quiet)) { throw "keyring backend is not WinVaultKeyring" }
+          if (-not (Select-String -Path $report -Pattern "SMOKE OK" -Quiet)) { throw "smoke not OK" }
+      - name: Upload zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: Litreader-win
+          path: dist/Litreader-*-win.zip
+          retention-days: 14
