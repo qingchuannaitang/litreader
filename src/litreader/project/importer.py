@@ -124,7 +124,8 @@ def _pptx(b: bytes, src: Source):
                 if t:
                     paras.append(t)
             if paras:
-                src.segments.append((f"幻灯片{re.search(r'(\d+)', n.rsplit('/', 1)[1]).group(1)}", "\n".join(paras)))
+                slide_no = re.search(r"(\d+)", n.rsplit("/", 1)[1]).group(1)
+                src.segments.append((f"幻灯片{slide_no}", "\n".join(paras)))
         src.images = sum(1 for i in z.namelist() if i.startswith("ppt/media/"))
 
 

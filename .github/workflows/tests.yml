@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, macos-latest]
-        python: ["3.11"]
+        python: ["3.11", "3.12"]
     env:
       LITREADER_NO_UPDATE_CHECK: "1"
       QT_QPA_PLATFORM: offscreen
