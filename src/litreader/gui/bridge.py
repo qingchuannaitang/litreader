@@ -100,5 +100,9 @@ def start(worker: RunWorker, parent: QObject | None = None) -> QThread:
     th.started.connect(worker.run)
     worker.finished.connect(th.quit, Qt.DirectConnection)   # QThread.quit is thread-safe; no GUI-loop round trip
     th._worker = worker   # keep the worker alive as long as its thread
+    # W2: collect garbage on the GUI thread first. Otherwise a dead Qt widget waiting in a reference cycle can be
+    # freed by a garbage collection that happens to run inside the worker thread -> crash (seen on CI macOS).
+    import gc
+    gc.collect()
     th.start()
     return th

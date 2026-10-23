@@ -38,6 +38,14 @@ def _hermetic_secrets(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _gc_on_main_thread():
+    """W2: free each test's dead Qt objects here (main thread), never later inside some worker thread."""
+    yield
+    import gc
+    gc.collect()
+
+
+@pytest.fixture(autouse=True)
 def _fresh_key_session():
     from litreader import secrets
     secrets.reset_session()
