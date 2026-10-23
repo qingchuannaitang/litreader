@@ -47,7 +47,7 @@ def test_legacy_dry_run_dir_kept_and_output_dir_wins(tmp_path):
     assert cfg.dry_run_dir == "阅读/litreader" and cfg.dry_run_root == v / "阅读" / "litreader"
 
 
-@pytest.mark.parametrize("bad", ["/abs", "../x", "a/../b", "."])
+@pytest.mark.parametrize("bad", ["/abs", "../x", "a/../b", ".", "C:/x", "\\\\abs"])
 def test_bad_output_dir_refused(tmp_path, bad):
     with pytest.raises(Stop):
         _cfg(tmp_path, f'output_dir = "{bad}"')

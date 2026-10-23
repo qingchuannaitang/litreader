@@ -44,7 +44,7 @@ def test_zotero_config_updates_ignore_equivalent_spelling(tmp_path, monkeypatch)
     new, ch = zs.config_updates(text, tmp_path / "Zotero", "http://localhost:23119/api")
     assert ch == [] and new == text            # 设置已正确，无需保存
     new, ch = zs.config_updates(text, tmp_path / "Other", "http://localhost:23119/api")
-    assert len(ch) == 1 and "data_dir" in ch[0] and tomllib.loads(new)["zotero"]["data_dir"] == str(tmp_path / "Other")
+    assert len(ch) == 1 and "data_dir" in ch[0] and tomllib.loads(new)["zotero"]["data_dir"] == (tmp_path / "Other").as_posix()
     assert tomllib.loads(new)["obsidian"]["vault_root"] == "~/v"     # other sections untouched
 
 
@@ -61,7 +61,7 @@ def test_vault_updates_and_check(tmp_path, monkeypatch):
     (v / ".obsidian").mkdir()
     assert configedit.check_vault(v, "论文库", "_litreader_试运行")["is_vault"]
     new, ch = configedit.vault_updates(text, tmp_path / "Other")
-    assert ch and tomllib.loads(new)["vault"]["root"] == str(tmp_path / "Other")
+    assert ch and tomllib.loads(new)["vault"]["root"] == (tmp_path / "Other").as_posix()
     assert tomllib.loads(new)["vault"]["papers_dir"] == "论文库"
     new, ch = configedit.vault_updates("[zotero]\ndata_dir = \"x\"\n", v)    # section added when missing
     assert ch and tomllib.loads(new)["vault"]["root"] == str(v)

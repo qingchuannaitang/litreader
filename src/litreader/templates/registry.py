@@ -118,7 +118,7 @@ class Registry(Store):
                     continue
                 if not e.name.endswith(".md"):
                     continue
-                st = e.stat(follow_symlinks=False)
+                st = os.stat(e.path, follow_symlinks=False)   # W2: DirEntry.stat() has st_nlink=0 on Windows
                 if not stat.S_ISREG(st.st_mode):
                     continue
                 if st.st_nlink > 1:

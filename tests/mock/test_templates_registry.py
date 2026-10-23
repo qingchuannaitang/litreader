@@ -16,7 +16,7 @@ FIX = Path(__file__).resolve().parents[1] / "fixtures" / "templates"
 
 
 def tree_hash(d: Path) -> dict:
-    return {str(p.relative_to(d)): (hashlib.sha256(p.read_bytes()).hexdigest(), p.stat().st_mtime_ns)
+    return {p.relative_to(d).as_posix(): (hashlib.sha256(p.read_bytes()).hexdigest(), p.stat().st_mtime_ns)
             for p in sorted(d.rglob("*")) if p.is_file()}
 
 

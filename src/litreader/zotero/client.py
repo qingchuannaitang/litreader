@@ -6,6 +6,7 @@ Response shapes follow Web API v3 item JSON: {"key":..., "data": {...}}.
 from __future__ import annotations
 
 import json
+import os
 import re
 import unicodedata
 import urllib.parse
@@ -150,7 +151,10 @@ class ZoteroClient:
         url = body.decode("utf-8", "replace").strip()
         if not url.startswith("file://"):
             return None
-        return Path(urllib.parse.unquote(urllib.parse.urlsplit(url).path))
+        u = urllib.parse.urlsplit(url)
+        # W2: url2pathname turns "/C:/Users/x%20y" into "C:\\Users\\x y" on Windows (plain unquote would give the
+        # broken "\\C:\\Users..."); on macOS/Linux it is the same unquote as before.
+        return Path(_url2path(u.path, os.name == "nt"))
 
     def resolve(self, title: str) -> Resolution:
         """Never auto-picks among ambiguous options."""
@@ -180,3 +184,12 @@ def storage_path(storage_root: Path, att: Attachment) -> Path:
     if not re.fullmatch(r"[A-Z0-9]{8}", att.key):
         raise Stop(f"unexpected attachment key format: {att.key!r}")
     return Path(storage_root) / att.key / att.filename
+
+
+def _url2path(path: str, windows: bool) -> str:
+    if not windows:
+        return urllib.parse.unquote(path)
+    p = urllib.parse.unquote(path)
+    if len(p) >= 3 and p[0] == "/" and p[2] == ":":   # "/C:/..." -> "C:/..."
+        p = p[1:]
+    return p.replace("/", "\\")

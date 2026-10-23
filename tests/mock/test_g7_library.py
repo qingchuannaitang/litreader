@@ -35,7 +35,7 @@ def _tree_hash(p: Path) -> str:
     h = hashlib.sha256()
     for f in sorted(p.rglob("*")) if p.exists() else []:
         if f.is_file():
-            h.update(str(f.relative_to(p)).encode() + f.read_bytes())
+            h.update(f.relative_to(p).as_posix().encode() + f.read_bytes())
     return h.hexdigest()
 
 

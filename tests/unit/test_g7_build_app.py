@@ -42,7 +42,7 @@ def test_spec_and_script():
     assert macos.BUNDLE_ID == "io.github.litreader.app"
     sh = ROOT / "scripts" / "build_app.sh"
     assert os.access(sh, os.X_OK) and "PyInstaller" in sh.read_text("utf-8")
-    if sys.platform != "darwin":
+    if sys.platform != "darwin" and os.name != "nt":   # sh script; Windows gets its own build (W4)
         r = subprocess.run(["sh", str(sh)], capture_output=True, text=True)
         assert r.returncode == 2 and "只能在 macOS" in r.stdout
 

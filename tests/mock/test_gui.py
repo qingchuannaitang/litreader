@@ -294,7 +294,7 @@ def test_theme_tokens_icons_and_qss(app):
 
 def _tree_digest(root: Path) -> dict:
     import hashlib
-    return {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
+    return {p.relative_to(root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
             for p in sorted(root.rglob("*")) if p.is_file()} if root.exists() else {}
 
 
@@ -419,7 +419,7 @@ def test_zotero_card_saves_only_after_confirm_with_backup(app, tmp_path, kr):
     assert cfgp.read_bytes() == orig and not list(cfgp.parent.glob("*.bak-*")) and not saved
     w._save(confirm=lambda: True)
     import tomllib
-    assert tomllib.loads(cfgp.read_text("utf-8"))["zotero"]["data_dir"] == str(dd)
+    assert tomllib.loads(cfgp.read_text("utf-8"))["zotero"]["data_dir"] == Path(dd).as_posix()
     baks = list(cfgp.parent.glob(cfgp.name + ".bak-*"))
     assert len(baks) == 1 and baks[0].read_bytes() == orig and saved and not w.save_btn.isEnabled()
     w2 = ZoteroSetupCard(cfg, detect_fn=det, opener=T.op_ok)            # already up to date -> nothing to save

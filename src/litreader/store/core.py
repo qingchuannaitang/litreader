@@ -243,12 +243,12 @@ class Store:
         for p in sorted(self.snaps.glob("*")) if self.snaps.is_dir() else []:
             stem = p.name.split(".")[0]
             if p.name.endswith(".tmp") or (stem.isdigit() and int(stem) > (n or 0)):
-                rep["residue"].append(str(p.relative_to(self.root)))
+                rep["residue"].append(p.relative_to(self.root).as_posix())
         if (self.root / "CURRENT.tmp").exists():
             rep["residue"].append("CURRENT.tmp")
         for p in sorted(self.objects.glob(f"*{self.EXT}")) if self.objects.is_dir() else []:
             if p.name[: -len(self.EXT)] not in referenced:
-                rep["residue"].append(str(p.relative_to(self.root)))
+                rep["residue"].append(p.relative_to(self.root).as_posix())
         if state == "stale":
             rep["residue"].append(".lock")
         if not apply:

@@ -104,3 +104,9 @@ def test_pdftools_decode_utf8_not_locale(monkeypatch, tmp_path):
     except Exception:
         pass
     assert seen and all(k.get("encoding") == "utf-8" and k.get("errors") == "replace" for k in seen)
+
+
+def test_zotero_file_url_to_windows_path():
+    from litreader.zotero.client import _url2path
+    assert _url2path("/C:/Users/%E7%8E%8B/Zotero/storage/AB/My%20Paper.pdf", True) == r"C:\Users\王\Zotero\storage\AB\My Paper.pdf"
+    assert _url2path("/Users/me/My%20Paper.pdf", False) == "/Users/me/My Paper.pdf"

@@ -13,7 +13,7 @@ def make(vault, data_dir, **kw):
 
 
 def snapshot(root):
-    return {str(p.relative_to(root)): sha256_file(p) for p in root.rglob("*") if p.is_file()}
+    return {p.relative_to(root).as_posix(): sha256_file(p) for p in root.rglob("*") if p.is_file()}
 
 
 def test_full_run_complete(vault, data_dir, ident):
@@ -89,7 +89,7 @@ def test_T16_pending_stays_pending_if_retry_fails(vault, data_dir, ident):
 def test_T18_regenerate_preserves_old_note_and_annotations(vault, data_dir, ident):
     p = make(vault, data_dir); p.run(ident)
     note = vault / "步态研究/ABCD1234.md"
-    note.write_text(note.read_text("utf-8").replace(f"{BEGIN}\n", f"{BEGIN}\n导师说：重点看验证集\n"), "utf-8")
+    note.write_text(note.read_text("utf-8").replace(f"{BEGIN}\n", f"{BEGIN}\n导师说：重点看验证集\n"), "utf-8", newline="\n")
     old_bytes = note.read_bytes()
     r = p.regenerate(ident, fake_render_v2)
     assert r.status == "COMPLETE" and r.note_path.startswith("_阅读版本/ABCD1234/")

@@ -64,7 +64,11 @@ def normalize_output_dir(raw) -> str:
     """Relative folder inside the vault (one or more levels). Absolute paths, '..', '.' and empty are refused."""
     s = str(raw or "").strip().replace("\\", "/").strip("/")
     parts = [x.strip() for x in s.split("/")]
-    if not s or Path(str(raw).strip()).is_absolute() or any(x in ("", ".", "..") for x in parts):
+    r = str(raw or "").strip()
+    from pathlib import PureWindowsPath
+    # W2: "/abs" is not "absolute" to Windows' Path, and "C:\\x" not to macOS' -> check both spellings explicitly
+    if (not s or Path(r).is_absolute() or r.startswith(("/", "\\")) or PureWindowsPath(r).drive
+            or any(x in ("", ".", "..") for x in parts)):
         raise Stop("[vault] output_dir 必须是库根目录下的相对文件夹（如 litreader），不能是绝对路径或含 ..")
     return "/".join(parts)
 
