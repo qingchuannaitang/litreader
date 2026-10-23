@@ -21,10 +21,13 @@ def _smoke(report: str | None) -> int:
         kr = keyring.get_keyring()
         lines.append(f"keyring backend: {type(kr).__module__}.{type(kr).__name__}")
         app = QApplication.instance() or QApplication([sys.argv[0]])
-        w = MainWindow()
+        from PySide6.QtCore import QTimer
+        w = MainWindow(check_updates=False)        # no network in the self-test
         w.show()
-        app.processEvents()
-        w.close()
+        QTimer.singleShot(500, w.close)
+        QTimer.singleShot(800, app.quit)
+        app.exec()                                 # same shutdown path as a normal run
+        w.deleteLater()
         app.processEvents()
         lines.append("main window: ok")
         lines.append("SMOKE OK")
@@ -45,6 +48,6 @@ def _smoke(report: str | None) -> int:
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--smoke":
-        os._exit(_smoke(sys.argv[2] if len(sys.argv) > 2 else None))
+        sys.exit(_smoke(sys.argv[2] if len(sys.argv) > 2 else None))
     from litreader.gui.app import main
     sys.exit(main())
