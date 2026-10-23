@@ -154,7 +154,7 @@ def test_stop_names_pages_and_rerun_reuses_mineru_cache(tmp_path, kr, monkeypatc
     out = capsys.readouterr().out
     assert "—— 物理第 5 页（MinerU page_idx=4；Zotero 链接 ?page=5 打开的就是这一页）" in out
     assert "image：无 bbox" in out and "图注：Figure 1. Full-page figure；归入：Fig1（有图注）" in out
-    assert "images/f1.jpg" in out and "未写任何文件" in out
+    assert "images/f1.jpg" in out.replace("\\", "/") and "未写任何文件" in out
     assert SECRET not in out and "结果显示步速下降" not in out and "加 --text" in out
     assert cli.main(["--config", str(cfg.path), "inspect-parse", "AAAA1111", "--page", "2", "--text"]) == 0
     assert SECRET in capsys.readouterr().out          # only with the explicit --text

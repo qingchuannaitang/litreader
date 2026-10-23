@@ -263,7 +263,7 @@ def test_nl_command_end_to_end_confined_to_test_folder(tmp_path, kr, monkeypatch
     assert new and all(cfg.dry_run_root in p.parents or p == cfg.dry_run_root for p in new)
     assert (vault / "我的旧笔记.md").read_text("utf-8") == "keep"
     assert sha256_file(pdf) == sha0 == r["pdf_sha_after"] and f.uploaded == b"%PDF-1.4 original"
-    assert "论文库/认知与步态/" in r["note"] and Path(r["receipt"]).is_file()
+    assert "论文库/认知与步态/" in r["note"].replace("\\", "/") and Path(r["receipt"]).is_file()
     note = Path(r["note"]).read_text("utf-8")
     assert "zotero://open-pdf/library/items/PDF00001" in note
     assert "[[litreader/论文库/_证据档案/AAAA1111/" in note
@@ -293,10 +293,10 @@ def test_new_topic_requires_confirmation_and_can_pick_existing(tmp_path, monkeyp
     monkeypatch.setenv("DEEPSEEK_API_KEY", "k")   # fake (W2: env is hermetic)
     vault, pdf, cfg = setup_run(tmp_path)
     r, ui, _, _ = go(cfg, tmp_path, ["y", "", "1"], tx=topic_llm("new", "老年步态力学"))
-    assert "建议新建主题文件夹「老年步态力学」" in ui.text and "论文库/认知与步态/" in r["note"]
+    assert "建议新建主题文件夹「老年步态力学」" in ui.text and "论文库/认知与步态/" in r["note"].replace("\\", "/")
     assert not (cfg.dry_run_root / "论文库" / "老年步态力学").exists()
     r, ui, _, _ = go(cfg, tmp_path, ["y", "", "y"], tx=topic_llm("new", "老年步态力学"))
-    assert "论文库/老年步态力学/" in r["note"]
+    assert "论文库/老年步态力学/" in r["note"].replace("\\", "/")
     assert not (vault / "论文库" / "老年步态力学").exists()   # real library untouched
 
 

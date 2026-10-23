@@ -64,7 +64,7 @@ def test_vault_updates_and_check(tmp_path, monkeypatch):
     assert ch and tomllib.loads(new)["vault"]["root"] == (tmp_path / "Other").as_posix()
     assert tomllib.loads(new)["vault"]["papers_dir"] == "论文库"
     new, ch = configedit.vault_updates("[zotero]\ndata_dir = \"x\"\n", v)    # section added when missing
-    assert ch and tomllib.loads(new)["vault"]["root"] == str(v)
+    assert ch and tomllib.loads(new)["vault"]["root"] == v.as_posix()
 
 
 # ---------- template / project creation ----------

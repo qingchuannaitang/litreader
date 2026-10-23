@@ -116,7 +116,7 @@ def test_window_full_dry_run_with_fakes(app, tmp_path, kr, monkeypatch):
     spin(app, lambda: (answer_like_user(win, kinds), not win.running and win.last_result is not None)[1], 30)
     assert kinds == ["candidate", "cost", "template", "topic_folder"]
     rc = win.last_result
-    assert rc["status"] == "DRY_RUN_COMPLETE" and "论文库/老年步态力学/" in rc["note"]
+    assert rc["status"] == "DRY_RUN_COMPLETE" and "论文库/老年步态力学/" in rc["note"].replace("\\", "/")
     new = set((tmp_path / "vault").rglob("*")) - before
     assert new and all(cfg.dry_run_root in p.parents or p == cfg.dry_run_root for p in new)   # dry-run only
     log = win.flow.log.toPlainText()

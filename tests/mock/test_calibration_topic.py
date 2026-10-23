@@ -112,5 +112,5 @@ def test_custom_new_topic_is_created_only_in_dry_run(tmp_path, monkeypatch):
     monkeypatch.setenv("DEEPSEEK_API_KEY", "k")   # fake (W2: env is hermetic)
     vault, pdf, cfg = setup_run(tmp_path)
     r, ui, _, _ = go(cfg, tmp_path, ["y", "", "无标记步态", "y"], tx=topic_llm("new", "老年步态力学"))
-    assert "论文库/无标记步态/" in r["note"] and r["topic"]["new"] is True
+    assert "论文库/无标记步态/" in r["note"].replace("\\", "/") and r["topic"]["new"] is True
     assert (cfg.dry_run_root / "论文库" / "无标记步态").is_dir() and not (vault / "论文库" / "无标记步态").exists()

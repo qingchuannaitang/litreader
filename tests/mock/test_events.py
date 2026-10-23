@@ -158,7 +158,7 @@ def test_topic_folder_decision_has_abc_existing_and_custom(tmp_path, monkeypatch
     assert tf["allow_custom"] and tf["options"][0]["key"] == "" and tf["options"][0]["label"] == "老年步态力学"
     assert any(o["label"] == "认知与步态" and o["key"] == "1" for o in tf["options"])
     assert rec.of("decision_request")[-1]["kind"] == "confirm"
-    assert "论文库/我的新主题/" in res["note"]
+    assert "论文库/我的新主题/" in res["note"].replace("\\", "/")
 
 
 def test_cost_decline_via_bus(tmp_path, monkeypatch):
