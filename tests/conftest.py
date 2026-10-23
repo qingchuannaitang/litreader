@@ -110,3 +110,12 @@ def pytest_sessionfinish(session, exitstatus):
     QCoreApplication.sendPostedEvents(None, QEvent.DeferredDelete)
     app.processEvents()
     gc.collect()
+
+
+@pytest.fixture(autouse=True)
+def _hermetic_default_config(monkeypatch, tmp_path_factory):
+    """W5: the GUI creates ~/litreader/config.local.toml on a fresh install; tests never touch the real home."""
+    from litreader import appconfig
+    d = tmp_path_factory.mktemp("home") / "litreader" / "config.local.toml"
+    monkeypatch.setattr(appconfig, "default_config_path", lambda: d)
+    yield d

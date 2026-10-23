@@ -14,7 +14,7 @@ class SettingsPage(QWidget):
     pick_avatar = Signal()
 
     def __init__(self, cfg, prefs, cfg_error: str | None = None, zotero_detect=None, zotero_opener=None,
-                 vault_picker=None, update_model=None):
+                 vault_picker=None, update_model=None, cfg_path=None):
         super().__init__()
         self.setObjectName("Page")
         self.prefs = prefs
@@ -66,9 +66,9 @@ class SettingsPage(QWidget):
         l.addWidget(label("第一次通知时 macOS 会询问是否允许；之后可在「系统设置 → 通知」里修改。拒绝后界面内照常提示。", "sub"))
         lay.addWidget(c)
 
-        self.zotero = ZoteroSetupCard(cfg, cfg_error, detect_fn=zotero_detect, opener=zotero_opener)
+        self.zotero = ZoteroSetupCard(cfg, cfg_error, detect_fn=zotero_detect, opener=zotero_opener, cfg_path=cfg_path)
         lay.addWidget(self.zotero)
-        self.obsidian = ObsidianCard(cfg, cfg_error, picker=vault_picker)
+        self.obsidian = ObsidianCard(cfg, cfg_error, picker=vault_picker, cfg_path=cfg_path)
         lay.addWidget(self.obsidian)
         self.about = None
         if update_model is not None:     # G8-10: 关于与反馈

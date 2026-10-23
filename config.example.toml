@@ -15,7 +15,7 @@ api_base = "http://localhost:23119/api"   # Zotero 本地接口（只读）
 data_dir = "~/Zotero"                       # Zotero 数据目录（附件在 storage/ 下）
 
 [app]
-data_dir = ""        # 留空：macOS 用 ~/Library/Application Support/litreader（任务副本、回执）
+data_dir = ""        # 留空：macOS 用 ~/Library/Application Support/litreader，Windows 用 %APPDATA%\\litreader（任务副本、回执）
 
 [mineru]
 token_name = "MINERU_API_TOKEN"   # 钥匙串里的名称

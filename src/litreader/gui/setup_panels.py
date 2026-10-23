@@ -28,9 +28,11 @@ class ZoteroSetupCard(QWidget):
     """一键检测 Zotero. `detect_fn` / `opener` are injectable for tests (no real Zotero needed)."""
     saved = Signal(str)
 
-    def __init__(self, cfg, cfg_error: str | None = None, detect_fn=None, opener=None):
+    def __init__(self, cfg, cfg_error: str | None = None, detect_fn=None, opener=None, cfg_path=None):
         super().__init__()
         self.cfg, self.cfg_error = cfg, cfg_error
+        # W5: a config file can exist (fresh, vault root still empty) while cfg failed to load -> still savable
+        self.cfg_file = Path(cfg.path) if cfg is not None else (Path(cfg_path) if cfg_path else None)
         self.detect_fn, self.opener = detect_fn, opener
         self.data_dir_override: Path | None = None
         self.result = None
@@ -131,13 +133,13 @@ class ZoteroSetupCard(QWidget):
             bl.addWidget(label("做完后点「重新检测」。", "sub"))
             self.body.addWidget(box)
         # save
-        if self.cfg is None:
-            self.body.addWidget(label("还没有 config.local.toml：先按《Mac 运行指南》第 2 节完成安装，再回来保存。", "sub"))
+        if self.cfg_file is None:
+            self.body.addWidget(label("还没有 config.local.toml：请先在下方 Obsidian 卡片选好库并保存。", "sub"))
             return
         if not d["valid"]:
             self.body.addWidget(label("数据目录没有通过检查，暂不提供保存。", "sub"))
             return
-        new, changes = zs.config_updates(Path(self.cfg.path).read_text("utf-8"), d["data_dir"],
+        new, changes = zs.config_updates(self.cfg_file.read_text("utf-8"), d["data_dir"],
                                          f"http://localhost:{d['port']}/api")
         self.pending = (new, changes)
         if not changes:
@@ -157,7 +159,7 @@ class ZoteroSetupCard(QWidget):
         if not ask():
             return
         try:
-            bak = zs.save_config(Path(self.cfg.path), new)
+            bak = zs.save_config(self.cfg_file, new)
         except Exception as e:  # noqa: BLE001
             QMessageBox.warning(self, "保存失败", str(e))
             return
@@ -173,11 +175,14 @@ class ObsidianCard(QWidget):
     runs write only under <vault>/<output_dir>/."""
     saved = Signal(str)
 
-    def __init__(self, cfg, cfg_error: str | None = None, picker=None, detect=None, folder_picker=None):
+    def __init__(self, cfg, cfg_error: str | None = None, picker=None, detect=None, folder_picker=None,
+                 cfg_path=None):
         super().__init__()
         self.folder_picker = folder_picker or (lambda start: QFileDialog.getExistingDirectory(
             self, "选择笔记文件夹（须在 Obsidian 库内）", start))
         self.cfg, self.cfg_error = cfg, cfg_error
+        # W5: a config file can exist (fresh, vault root still empty) while cfg failed to load -> still savable
+        self.cfg_file = Path(cfg.path) if cfg is not None else (Path(cfg_path) if cfg_path else None)
         from ..configedit import detect_vaults
         self.detect = detect or detect_vaults
         self.picker = picker or (lambda: QFileDialog.getExistingDirectory(self, "选择 Obsidian 库（含 .obsidian 文件夹）"))
@@ -288,13 +293,13 @@ class ObsidianCard(QWidget):
         if not info["is_vault"]:
             self.status.addWidget(label("⚠️ 这个文件夹里没有 .obsidian/，看起来不像 Obsidian 库。请确认选的是库的根目录"
                                         "（在 Obsidian 里打开过的那个文件夹）。", "warn"))
-        if self.cfg is None:
+        if self.cfg_file is None:
             self.status.addWidget(label(self.cfg_error or "还没有 config.local.toml：先完成安装再保存。", "sub"))
             return
         if self.cur_out != out and (Path(txt).expanduser() / self.cur_out).is_dir():
             self.status.addWidget(label(f"已有笔记留在原文件夹「{self.cur_out}」，不会被移动或删除；"
                                         "之后的新笔记写到新文件夹。", "sub"))
-        new, changes = vault_updates(Path(self.cfg.path).read_text("utf-8"), txt, out, self.cur_out)
+        new, changes = vault_updates(self.cfg_file.read_text("utf-8"), txt, out, self.cur_out)
         if not changes:
             self.status.addWidget(label("✅ 设置已正确，无需保存。", "ok"))
             return
@@ -314,7 +319,7 @@ class ObsidianCard(QWidget):
         if not ask():
             return
         try:
-            bak = zs.save_config(Path(self.cfg.path), new)
+            bak = zs.save_config(self.cfg_file, new)
         except Exception as e:  # noqa: BLE001
             QMessageBox.warning(self, "保存失败", str(e))
             return

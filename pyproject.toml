@@ -25,6 +25,7 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.setuptools.package-data]
+"litreader" = ["data/*.toml"]
 "litreader.gui" = ["icons/*.svg", "icons/*.txt", "icons/*.md"]
 
 [tool.pytest.ini_options]

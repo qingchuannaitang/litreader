@@ -33,12 +33,21 @@ class MainWindow(QMainWindow):
                  check_updates: bool | None = None):
         super().__init__()
         self.config, self.run_kwargs = config, dict(run_kwargs or {})
-        self.cfg, self.cfg_error = cfg, None
+        self.cfg, self.cfg_error, self.cfg_path = cfg, None, None
         if self.cfg is None:
+            if config is None:   # W5: fresh install -> create ~/litreader/config.local.toml from the bundled example
+                try:
+                    appconfig.ensure_default_config()
+                except OSError as e:
+                    self.cfg_error = f"无法创建配置文件 {appconfig.default_config_path()}：{e}"
+            try:
+                self.cfg_path = appconfig.find_config(config)
+            except LitError:
+                pass
             try:
                 self.cfg = appconfig.load(config)
             except LitError as e:
-                self.cfg_error = str(e)
+                self.cfg_error = self.cfg_error or str(e)
         self._fixed_cfg = cfg is not None
         self.prefs = Prefs(data_dir or (self.cfg.data_dir if self.cfg else appconfig.default_data_dir()))
         self.updates = UpdateModel(self.prefs, getter=update_getter)
@@ -73,7 +82,8 @@ class MainWindow(QMainWindow):
         self.models = ModelsPage(self.cfg, models_transport)
         self.library = LibraryPage(self.cfg, self.cfg_error)
         self.settings = SettingsPage(self.cfg, self.prefs, self.cfg_error, zotero_detect=zotero_detect,
-                                     zotero_opener=zotero_opener, update_model=self.updates)
+                                     zotero_opener=zotero_opener, update_model=self.updates,
+                                     cfg_path=self.cfg_path)
         self.settings.zotero.saved.connect(lambda _b: self._reload_cfg())
         self.settings.obsidian.saved.connect(lambda _b: self._reload_cfg())
         self.pages = {"home": self.home, "flow": self.flow, "result": self.result, "models": self.models,
@@ -96,7 +106,7 @@ class MainWindow(QMainWindow):
         self.settings.avatar_changed.connect(self.refresh_avatar)
         self.settings.pick_avatar.connect(self.choose_avatar)
         if self.cfg_error:
-            self.home.set_banner(f"⚠️ {self.cfg_error}。请先按《Mac 运行指南》完成安装（config.local.toml），再重新打开 Litreader。")
+            self.home.set_banner(f"⚠️ {self.cfg_error}。请到「基础设置」选好 Obsidian 库并保存（写入 {self.cfg_path or 'config.local.toml'}），然后重新打开 Litreader。")
         self._menus()
         hints = QGuiApplication.styleHints()
         if hasattr(hints, "colorSchemeChanged"):

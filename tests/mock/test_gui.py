@@ -464,7 +464,7 @@ def test_zotero_card_without_config_detects_but_cannot_save(app, tmp_path):
     w = ZoteroSetupCard(None, "没有配置", detect_fn=det, opener=T.op_403)
     w.run()
     spin(app, lambda: w.result is not None)
-    assert "先按《Mac 运行指南》" in "\n".join(_labels(w)) and not hasattr(w, "save_btn")
+    assert "还没有 config.local.toml" in "\n".join(_labels(w)) and not hasattr(w, "save_btn")
 
 
 def test_parser_tokens_saved_to_keychain_never_displayed(app, tmp_path, kr, monkeypatch):

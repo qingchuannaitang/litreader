@@ -73,9 +73,39 @@ def normalize_output_dir(raw) -> str:
     return "/".join(parts)
 
 
+def default_config_path() -> Path:
+    """~/litreader/config.local.toml (Windows: %USERPROFILE%\\litreader\\config.local.toml)."""
+    return Path.home() / "litreader" / "config.local.toml"
+
+
+def example_config_text() -> str:
+    """config.example.toml shipped inside the package (works from source, wheel and PyInstaller bundles)."""
+    from importlib import resources
+    return resources.files("litreader").joinpath("data/config.example.toml").read_text("utf-8")
+
+
+def ensure_default_config() -> Path | None:
+    """W5: fresh installs (Windows zip, Mac app) have no config. Create the default one from the bundled example,
+    with placeholders (vault root empty) for 基础设置 to fill in. Never overwrites: exclusive create. Returns the
+    path created, or None when a config already exists somewhere find_config() looks."""
+    try:
+        find_config(None)
+        return None
+    except Stop:
+        pass
+    p = default_config_path()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with open(p, "x", encoding="utf-8", newline="\n") as f:
+            f.write(example_config_text())
+    except FileExistsError:
+        return None
+    return p
+
+
 def find_config(explicit: str | None) -> Path:
     cands = [explicit, os.environ.get("LITREADER_CONFIG"), "config.local.toml",
-             str(Path.home() / "litreader" / "config.local.toml")]
+             str(default_config_path())]
     for c in cands:
         if c and Path(c).expanduser().is_file():
             return Path(c).expanduser().resolve()

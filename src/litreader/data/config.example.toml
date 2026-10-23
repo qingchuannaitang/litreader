@@ -1,0 +1,44 @@
+# litreader 配置示例。复制为 config.local.toml（已被 .gitignore 忽略）后填写你自己的值。
+# 不要把个人路径、Key 写进本示例或任何受 Git 管理的文件。Key 只存钥匙串：litreader key set 名称
+
+[vault]
+# Obsidian 库根目录（必填，用户自己的值）。示例："/Users/<你的用户名>/<你的库>"
+root = ""
+papers_dir = "论文库"
+# 笔记、图表、证据档案只写入 <root>/<output_dir>/ 这一个文件夹（库根目录下的相对路径，可多级）：
+#   笔记 <output_dir>/论文库/<主题>/，图表 <output_dir>/论文库/_图表/，证据档案 <output_dir>/论文库/_证据档案/
+# 旧版配置里的 dry_run_dir = "_litreader_试运行" 仍然有效（没有 output_dir 时沿用它）；可在 基础设置 → Obsidian 修改
+output_dir = "litreader"
+
+[zotero]
+api_base = "http://localhost:23119/api"   # Zotero 本地接口（只读）
+data_dir = "~/Zotero"                       # Zotero 数据目录（附件在 storage/ 下）
+
+[app]
+data_dir = ""        # 留空：macOS 用 ~/Library/Application Support/litreader，Windows 用 %APPDATA%\\litreader（任务副本、回执）
+
+[mineru]
+token_name = "MINERU_API_TOKEN"   # 钥匙串里的名称
+model_version = "vlm"
+timeout_s = 900
+
+[run]
+link_mechanism_verified = false   # 只有你在 Zotero 里实际点过页码链接、确认能跳页后才改成 true
+
+[templates]
+# 模板库：库根目录下的文件夹（程序只读取，绝不修改；登记信息写在 [app] data_dir/templates/）。不存在时只用内置模板。
+dir = "模板库"
+# confirm = 自动选好模板，回车确认（可改选）；ask = 每次都让你用序号选择
+selection = "confirm"
+
+[candidates]
+# 选论文时：英文题名（且 Zotero“其他”里没有中文题名）自动机翻成中文，标“（机翻）”。一次批量小调用，结果缓存在
+# [app] data_dir/title_translations.json，同一篇不会重复翻译；从不写回 Zotero。失败或没网时只显示英文。
+translate_titles = true
+translate_with = "交叉核对"   # 或 "主笔"
+
+# ---------- 模型 ----------
+# 模型设置在同一文件夹的 models.toml（用 `litreader models set 主笔` 等命令维护；示例见 models.example.toml）。
+# 每个角色（主笔/看图/交叉核对）1 个主用 + 最多 3 个备用；每个槽位：厂商名称、模型名、URL、Key（Key 只存钥匙串）。
+[models]
+file = "models.toml"

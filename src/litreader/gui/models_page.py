@@ -453,7 +453,7 @@ class ModelsPage(QWidget):
                             "每个角色 1 个主用 + 最多 3 个备用，主用失败时按顺序自动换备用。", "muted"))
         self.ms, self.path, err = None, None, None
         if cfg is None:
-            err = "还没有读到配置文件 config.local.toml：请先按《Mac 运行指南》第 2 节完成安装。"
+            err = "还没有可用的配置：请先到「基础设置」选好 Obsidian 库并保存，然后重新打开 Litreader。"
         else:
             self.path = cfg.models_path
             try:

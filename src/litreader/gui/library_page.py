@@ -518,7 +518,7 @@ class LibraryPage(QWidget):
                             "可以在这里新建、修改（右键）和整理模板与项目。", "muted"))
         self.tabs = None
         if cfg is None:
-            lay.addWidget(empty_state("circle-alert", "还没有读到配置文件", cfg_error or "请先按《Mac 运行指南》完成安装。"))
+            lay.addWidget(empty_state("circle-alert", "还没有读到配置文件", cfg_error or "请先到「基础设置」选好 Obsidian 库并保存，然后重新打开 Litreader。"))
             lay.addStretch(1)
             return
         self.tabs = QTabWidget()
