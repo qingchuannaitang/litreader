@@ -99,7 +99,7 @@ class Pipeline:
 
     # ---------- internals ----------
     def _analysis_path(self, ident: PaperIdentity) -> Path:
-        p = self.store.dir / "jobs" / ident.key
+        p = self.store.dir / "jobs" / ident.fs_key
         p.mkdir(parents=True, exist_ok=True)
         return p / "analysis.json"
 

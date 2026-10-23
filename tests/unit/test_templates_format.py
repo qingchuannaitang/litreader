@@ -127,8 +127,8 @@ def test_golden_fixture_renders_identical():
     T = _fx()
     from litreader.analysis.validator_v2 import validate_v2
     obs = {"Fig1": {"finding": "共 181 人筛查", "numbers": ["181"], "unreadable": "", "model": "vm"}}
-    assert T._render(validate_v2(T.good(), T.BLOCKS, T.MAN), None) == (GOLD / "fixture_novision.md").read_text()
-    assert T._render(validate_v2(T.good(), T.BLOCKS, T.MAN), obs) == (GOLD / "fixture_vision.md").read_text()
+    assert T._render(validate_v2(T.good(), T.BLOCKS, T.MAN), None) == (GOLD / "fixture_novision.md").read_text("utf-8")
+    assert T._render(validate_v2(T.good(), T.BLOCKS, T.MAN), obs) == (GOLD / "fixture_vision.md").read_text("utf-8")
     cross = {"Fig1": [{"claim": "共 79 名纳入", "verdict": "CONSISTENT", "page": 2, "quote": "纳入 79 名", "block_id": "b2", "reason": ""},
                       {"claim": "无差异", "verdict": "CONTRADICTED", "page": 2, "quote": "膝伸展角增加", "block_id": "b2", "reason": "冲突"}]}
     md = T.render(validate_v2(T.good(), T.BLOCKS, T.MAN), blocks=T.BLOCKS, manifest=T.MAN, vision_obs=obs,
@@ -136,10 +136,10 @@ def test_golden_fixture_renders_identical():
                   translation_notice=None, link_mechanism_verified=False, read_date="2026-10-17",
                   evidence_link="_证据档案/K/x——证据档案", model_info={"text": "m", "vision": "vm"}, crosscheck=cross,
                   zotero_meta={"authors": "Zhong 等", "journal": "J", "title_en": "T", "year": "2021"})
-    assert md == (GOLD / "fixture_cross.md").read_text()
+    assert md == (GOLD / "fixture_cross.md").read_text("utf-8")
     # explicit main.general == default
     assert T.render(validate_v2(T.good(), T.BLOCKS, T.MAN), template=builtin.load("main.general"), **_kw(T)) == \
-        (GOLD / "fixture_novision.md").read_text()
+        (GOLD / "fixture_novision.md").read_text("utf-8")
 
 
 def _kw(T):
@@ -159,7 +159,7 @@ def test_zhong_replay_main_general_byte_identical():
     from litreader.render.l2_note_v2 import render
     v2, kw = Z.build()
     out = render(v2, template=builtin.load("main.general"), **kw)
-    gold = (ROOT / ".spike_data" / "golden" / "zhong_main_general.md").read_text()
+    gold = (ROOT / ".spike_data" / "golden" / "zhong_main_general.md").read_text("utf-8")
     assert out == gold, "main.general must reproduce the pre-Stage-6 renderer byte for byte"
 
 

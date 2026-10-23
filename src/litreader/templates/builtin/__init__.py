@@ -36,6 +36,12 @@ def raw(tid: str) -> bytes:
     import hashlib
     b = (DIR / FILES[tid]).read_bytes()
     if hashlib.sha256(b).hexdigest() != SHA256[tid]:
+        # W2: a Windows checkout/unzip may turn LF into CRLF. Same text, different bytes: accept it only if the
+        # LF-normalised bytes match the pinned hash exactly, and hand out those canonical bytes. Any real edit
+        # still fails.
+        n = b.replace(b"\r\n", b"\n")
+        if n != b and hashlib.sha256(n).hexdigest() == SHA256[tid]:
+            return n
         raise Stop(f"内置模板 {tid} 的内容与安装时不一致（SHA-256 不符），停止。请重新安装 litreader")
     return b
 

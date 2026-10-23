@@ -1,3 +1,10 @@
+# W2: LF everywhere (Windows checkouts would otherwise turn templates into CRLF and change their SHA-256)
+* text=auto eol=lf
+*.png binary
+*.icns binary
+*.ico binary
+*.pdf binary
+*.zip binary
 # Default build (git archive -> dist/litreader.zip) leaves out the old shiba meme artwork
 # (copyright risk). Files stay in history and in the repo; they are just not shipped or used.
 assets/app_icon.png export-ignore
@@ -20,3 +27,4 @@ zh.dtd export-ignore
 src/litreader.egg-info/** export-ignore
 docs/G11_PROGRESS.md export-ignore
 docs/G12_PROGRESS.md export-ignore
+docs/W_PROGRESS.md export-ignore

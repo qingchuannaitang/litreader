@@ -39,9 +39,9 @@ def test_first_refresh_registers_builtins_only(env):
     snap, ev, _ = reg.refresh()
     assert snap["n"] == 1 and {r["id"] for r in snap["records"]} == set(builtin.all_ids())
     assert all(r["status"] == "ACTIVE" for r in snap["records"])
-    assert reg.current_file.read_text() == "1" and (reg.snaps / "1.json").is_file()
+    assert reg.current_file.read_text("utf-8") == "1" and (reg.snaps / "1.json").is_file()
     assert all((reg.objects / f"{r['sha256']}.md").is_file() for r in snap["records"])
-    lines = [json.loads(l) for l in reg.journal.read_text().splitlines()]
+    lines = [json.loads(l) for l in reg.journal.read_text("utf-8").splitlines()]
     assert lines[0]["op"] == "REFRESH" and all(l["snapshot"] == 1 for l in lines)
     # incremental: nothing changed -> no new snapshot
     snap2, ev2, _ = reg.refresh()
@@ -143,7 +143,7 @@ def test_lock_live_foreign_stale_autorecover(env, tmp_path):
     assert snap["n"] == 1 and not reg.lockfile.exists()
     q = list((reg.root / "quarantine").rglob("*"))
     assert any(p.name == "2.json.tmp" for p in q) and any(p.name == "f" * 64 + ".md" for p in q)
-    log = [json.loads(l) for l in reg.journal.read_text().splitlines()]
+    log = [json.loads(l) for l in reg.journal.read_text("utf-8").splitlines()]
     assert any(l["op"] == "RECOVERED" and l["auto"] for l in log)
 
 

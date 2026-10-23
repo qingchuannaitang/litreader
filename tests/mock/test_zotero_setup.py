@@ -2,6 +2,7 @@
 import io
 import os
 import time
+from pathlib import Path
 import urllib.error
 
 from litreader import cli
@@ -108,7 +109,7 @@ def test_cli_setup_saves_only_after_yes_with_backup(tmp_path, monkeypatch, capsy
     assert "未保存" in out and 'data_dir = "~/Zotero"' in cfg.read_text("utf-8") and not list(tmp_path.glob("*.bak-*"))
     monkeypatch.setattr("builtins.input", lambda q="": "y")
     assert cli.main(["--config", str(cfg), "setup", "zotero"]) == 0
-    assert f'data_dir = "{dd}"' in cfg.read_text("utf-8")
+    assert f'data_dir = "{Path(dd).as_posix()}"' in cfg.read_text("utf-8")
     baks = list(tmp_path.glob("config.local.toml.bak-*"))
     assert len(baks) == 1 and 'data_dir = "~/Zotero"' in baks[0].read_text("utf-8")
     assert prefs.read_text("utf-8").count("user_pref") == 5                                 # Zotero untouched

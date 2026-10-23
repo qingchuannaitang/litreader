@@ -3,6 +3,7 @@ everything else untouched. Values that are already equal (paths compared after e
 and "/Users/<you>/Zotero" count as the same) are left exactly as written and reported as no change."""
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 
@@ -13,9 +14,10 @@ def norm_path(p: str | Path) -> str:
     if not s:
         return ""
     try:
-        return str(Path(s).expanduser().resolve())
+        r = str(Path(s).expanduser().resolve())
     except (OSError, RuntimeError):
-        return str(Path(s).expanduser())
+        r = str(Path(s).expanduser())
+    return os.path.normcase(r)   # Windows: case-insensitive, "/" == "\\"
 
 
 def same_path(a: str | Path, b: str | Path) -> bool:
@@ -27,7 +29,19 @@ def norm_url(u: str) -> str:
 
 
 def _esc(v: str) -> str:
-    return str(v).replace("\\", "/").replace('"', '\\"')
+    """Value for a TOML basic string. Backslashes become "/" (these are paths; Windows accepts "/", and a raw
+    "C:\\Users" would be read by TOML as the escape \\U and break the whole file). Quotes and control characters
+    are escaped so the written file always parses."""
+    s = str(v).replace("\\", "/")
+    out = []
+    for c in s:
+        if c == '"':
+            out.append('\\"')
+        elif ord(c) < 0x20 or c == "\x7f":
+            out.append(f"\\u{ord(c):04x}")
+        else:
+            out.append(c)
+    return "".join(out)
 
 
 def set_keys(cfg_text: str, section: str, want: dict[str, str], equal: dict | None = None) -> tuple[str, list[str]]:

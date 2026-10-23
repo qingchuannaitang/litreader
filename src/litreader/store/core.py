@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 import socket
+import stat
 import time
 from contextlib import contextmanager
 from datetime import datetime
@@ -115,7 +116,7 @@ class Store:
         self.root.mkdir(parents=True, exist_ok=True)
         for attempt in (1, 2):
             try:
-                fd = os.open(self.lockfile, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+                fd = os.open(self.lockfile, os.O_CREAT | os.O_EXCL | os.O_WRONLY | _O_BINARY, 0o644)
                 break
             except FileExistsError:
                 state, info = self.lock_state()
@@ -167,7 +168,7 @@ class Store:
             if sha(p.read_bytes()) != sha(b):
                 raise Corrupt(f"已有对象 {p.name} 内容被改动，停止")
             return
-        fd = os.open(p, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o444)
+        fd = os.open(p, os.O_CREAT | os.O_EXCL | os.O_WRONLY | _O_BINARY, 0o444)
         with os.fdopen(fd, "wb") as f:
             f.write(b)
             f.flush()
@@ -190,7 +191,7 @@ class Store:
         final = self.snaps / f"{n}.json"
         if final.exists():
             raise Corrupt(f"快照 {n} 已存在（并发写入？），停止")
-        os.rename(tmp, final)
+        os.replace(tmp, final)   # W2: os.rename fails on Windows if the target exists; existence checked above
         ctmp = self.root / "CURRENT.tmp"
         ctmp.write_text(str(n), "utf-8")
         os.replace(ctmp, self.current_file)
@@ -257,7 +258,7 @@ class Store:
             src = self.root / rel
             dst = qdir / rel
             dst.parent.mkdir(parents=True, exist_ok=True)
-            os.replace(src, dst)
+            _move(src, dst)
             rep["actions"].append(f"移入隔离区 {rel}")
         if to is not None and bad:
             ctmp = self.root / "CURRENT.tmp"
@@ -279,7 +280,40 @@ class Store:
             return [str(e)]
 
 
+_O_BINARY = getattr(os, "O_BINARY", 0)   # Windows: no CRLF translation on raw fds
+
+
+def _move(src: Path, dst: Path) -> None:
+    """os.replace that also works for our read-only (0o444) object files on Windows, where a read-only attribute
+    blocks replacing/deleting. The moved file gets its read-only mode back."""
+    try:
+        os.replace(src, dst)
+        return
+    except PermissionError:
+        if os.name != "nt" or not src.is_file():
+            raise
+    mode = src.stat().st_mode
+    os.chmod(src, mode | stat.S_IWRITE)
+    if dst.exists():
+        os.chmod(dst, dst.stat().st_mode | stat.S_IWRITE)
+    os.replace(src, dst)
+    os.chmod(dst, mode)
+
+
+def force_unlink(p: Path) -> None:
+    """Delete a file even if it carries the Windows read-only attribute (our 0o444 objects)."""
+    try:
+        p.unlink()
+    except PermissionError:
+        if os.name != "nt":
+            raise
+        os.chmod(p, stat.S_IWRITE | stat.S_IREAD)
+        p.unlink()
+
+
 def _pid_alive(pid: int) -> bool:
+    if os.name == "nt":
+        return _pid_alive_windows(pid)
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
@@ -287,3 +321,26 @@ def _pid_alive(pid: int) -> bool:
     except PermissionError:
         return True
     return True
+
+
+def _pid_alive_windows(pid: int) -> bool:
+    """W2/P0: on Windows os.kill(pid, 0) does NOT probe, it TerminateProcess()es the target (which could be any
+    program that reused the pid). Query the process read-only instead: OpenProcess + GetExitCodeProcess."""
+    import ctypes
+    from ctypes import wintypes
+    k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    k32.OpenProcess.restype = wintypes.HANDLE
+    k32.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+    k32.GetExitCodeProcess.argtypes = (wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD))
+    k32.CloseHandle.argtypes = (wintypes.HANDLE,)
+    PROCESS_QUERY_LIMITED_INFORMATION, STILL_ACTIVE, ERROR_ACCESS_DENIED = 0x1000, 259, 5
+    h = k32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+    if not h:
+        return ctypes.get_last_error() == ERROR_ACCESS_DENIED   # exists but not ours to query
+    try:
+        code = wintypes.DWORD()
+        if not k32.GetExitCodeProcess(h, ctypes.byref(code)):
+            return True
+        return code.value == STILL_ACTIVE
+    finally:
+        k32.CloseHandle(h)

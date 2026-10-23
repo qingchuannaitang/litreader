@@ -141,6 +141,7 @@ def test_window_full_dry_run_with_fakes(app, tmp_path, kr, monkeypatch):
 
 def test_window_cancel_at_cost_writes_nothing(app, tmp_path, kr, monkeypatch):
     monkeypatch.setenv("MINERU_API_TOKEN", "tok")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "k")   # fake (W2: env is hermetic)
     calls = []
     cfg, kw, f = gui_fakes.environment(tmp_path, n=1, llm={"calls": calls})
     from litreader.gui.app import MainWindow
@@ -434,6 +435,7 @@ def test_obsidian_card_checks_vault_and_saves_with_confirm(app, tmp_path, kr, mo
     cfgp = Path(cfg.path)
     orig = cfgp.read_bytes()
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
     w = ObsidianCard(cfg)
     assert w.pending is None and "无需保存" in "\n".join(_labels(w))          # current vault, unchanged
     other = tmp_path / "OtherVault"

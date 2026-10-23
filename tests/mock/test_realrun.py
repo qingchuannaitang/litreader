@@ -42,8 +42,8 @@ def kr(monkeypatch):
 
 def write_cfg(tmp_path, vault, vision=False, prices=None):
     s = (ROOT / "config.example.toml").read_text("utf-8")
-    s = s.replace('root = ""', f'root = "{vault}"', 1)
-    s = s.replace('data_dir = ""', f'data_dir = "{tmp_path / "appdata"}"')
+    s = s.replace('root = ""', f'root = "{Path(vault).as_posix()}"', 1)
+    s = s.replace('data_dir = ""', f'data_dir = "{(tmp_path / "appdata").as_posix()}"')
     p = tmp_path / "config.local.toml"
     p.write_text(s, "utf-8")
     m = (ROOT / "models.example.toml").read_text("utf-8").replace('model = ""', 'model = "user-model"')
@@ -277,6 +277,7 @@ def test_nl_command_end_to_end_confined_to_test_folder(tmp_path, kr, monkeypatch
 
 def test_decline_estimate_does_nothing(tmp_path, monkeypatch):
     monkeypatch.setenv("MINERU_API_TOKEN", "tok")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "k")   # fake (W2: env is hermetic)
     vault, pdf, cfg = setup_run(tmp_path)
     calls = []
     def tx(*a):
@@ -289,6 +290,7 @@ def test_decline_estimate_does_nothing(tmp_path, monkeypatch):
 
 def test_new_topic_requires_confirmation_and_can_pick_existing(tmp_path, monkeypatch):
     monkeypatch.setenv("MINERU_API_TOKEN", "tok")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "k")   # fake (W2: env is hermetic)
     vault, pdf, cfg = setup_run(tmp_path)
     r, ui, _, _ = go(cfg, tmp_path, ["y", "", "1"], tx=topic_llm("new", "老年步态力学"))
     assert "建议新建主题文件夹「老年步态力学」" in ui.text and "论文库/认知与步态/" in r["note"]
@@ -300,12 +302,14 @@ def test_new_topic_requires_confirmation_and_can_pick_existing(tmp_path, monkeyp
 
 def test_hallucinated_existing_folder_becomes_new_proposal(tmp_path, monkeypatch):
     monkeypatch.setenv("MINERU_API_TOKEN", "tok")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "k")   # fake (W2: env is hermetic)
     vault, pdf, cfg = setup_run(tmp_path)
     with pytest.raises(realrun.Cancelled):
         go(cfg, tmp_path, ["y", "", "q"], tx=topic_llm("existing", "不存在的文件夹"))
 
 
-def test_batch_and_unknown_commands_stop(tmp_path):
+def test_batch_and_unknown_commands_stop(tmp_path, monkeypatch):
+    monkeypatch.setenv("MINERU_API_TOKEN", "tok"); monkeypatch.setenv("DEEPSEEK_API_KEY", "k")   # fakes
     vault, pdf, cfg = setup_run(tmp_path)
     with pytest.raises(Stop, match="一次只能精读一篇"):
         go(cfg, tmp_path, [], command="批量精读zotero中所有步态论文")
@@ -313,7 +317,8 @@ def test_batch_and_unknown_commands_stop(tmp_path):
         go(cfg, tmp_path, ["n"], command="今天天气怎么样")
 
 
-def test_no_match_stops(tmp_path):
+def test_no_match_stops(tmp_path, monkeypatch):
+    monkeypatch.setenv("MINERU_API_TOKEN", "tok"); monkeypatch.setenv("DEEPSEEK_API_KEY", "k")   # fakes
     vault, pdf, cfg = setup_run(tmp_path)
     def t(url):
         return 200, b"[]"

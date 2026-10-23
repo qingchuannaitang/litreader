@@ -127,7 +127,7 @@ class Registry(Store):
                 if st.st_size > MAX_BYTES:
                     out.append((r, None, f"文件过大（{st.st_size} 字节）"))
                     continue
-                fd = os.open(e.path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+                fd = os.open(e.path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0))
                 with os.fdopen(fd, "rb") as f:
                     out.append((r, f.read(MAX_BYTES + 1), None))
         walk(lib, "", 0)

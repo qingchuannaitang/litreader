@@ -49,7 +49,8 @@ def test_soft_wrap_breaks_long_ids():
     assert "\u200b" in s and s.replace("\u200b", "") == "tpl_user_20261021_abcdefabcdefabcdefabcdefabcdef/x.md"
 
 
-def test_inline_edit_and_bulk_fill_confirm(app, tmp_path, kr):
+def test_inline_edit_and_bulk_fill_confirm(app, tmp_path, kr, monkeypatch):
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "k")   # fake (W2: env is hermetic)
     from litreader.gui.library_page import BulkFillDialog, FieldRow, LibraryPage
     cfg, _, _ = gui_fakes.environment(tmp_path)
     gui_fakes.sample_project(cfg)

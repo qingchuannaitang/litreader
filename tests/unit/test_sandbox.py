@@ -49,6 +49,7 @@ def test_root_symlink_rejected(tmp_path):
         Sandbox(tmp_path / "rootlink")
 
 
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="no FIFOs on Windows")
 def test_fifo_rejected(vault):
     os.mkfifo(vault / "p")
     with pytest.raises(SandboxViolation):

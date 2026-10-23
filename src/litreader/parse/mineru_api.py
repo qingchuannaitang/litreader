@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import time
 import urllib.error
 import urllib.request
@@ -97,8 +98,9 @@ def parse_pdf(pdf: Path, out_dir: Path, token: str, *, consent: bool, model_vers
         z.extractall(tmp)
     if ext.exists():
         shutil.rmtree(ext)
-    tmp.rename(ext)   # the cache counts only once fully extracted (an interrupted unzip is never "cached")
-    (out_dir / "run_meta.json").write_text(json.dumps({"batch_id": batch_id, "model_version": model_version}, indent=1))
+    os.replace(tmp, ext)   # the cache counts only once fully extracted (an interrupted unzip is never "cached")
+    (out_dir / "run_meta.json").write_text(json.dumps({"batch_id": batch_id, "model_version": model_version}, indent=1),
+                                          "utf-8")
     return ext
 
 

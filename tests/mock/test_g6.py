@@ -28,6 +28,7 @@ def kr(monkeypatch):
 # ---------- path normalisation ----------
 def test_norm_path_tilde_equals_absolute(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
     (tmp_path / "Zotero").mkdir()
     assert configedit.same_path("~/Zotero", str(tmp_path / "Zotero"))
     assert configedit.same_path(str(tmp_path / "Zotero") + "/", "~/Zotero/")
@@ -38,6 +39,7 @@ def test_norm_path_tilde_equals_absolute(tmp_path, monkeypatch):
 
 def test_zotero_config_updates_ignore_equivalent_spelling(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
     text = '[zotero]\ndata_dir = "~/Zotero"\napi_base = "http://localhost:23119/api/"\n\n[obsidian]\nvault_root = "~/v"\n'
     new, ch = zs.config_updates(text, tmp_path / "Zotero", "http://localhost:23119/api")
     assert ch == [] and new == text            # 设置已正确，无需保存
@@ -48,6 +50,7 @@ def test_zotero_config_updates_ignore_equivalent_spelling(tmp_path, monkeypatch)
 
 def test_vault_updates_and_check(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
     v = tmp_path / "MyVault"
     v.mkdir()
     text = '[zotero]\ndata_dir = "~/Zotero"\n\n[vault]\nroot = "~/MyVault"\npapers_dir = "论文库"\n'

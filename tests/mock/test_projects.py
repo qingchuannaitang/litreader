@@ -279,11 +279,16 @@ def minimal_pdf(text: str | None) -> bytes:
 
 def test_T03_formats_and_refusals(tmp_path):
     p = tmp_path / "a.pdf"; p.write_bytes(minimal_pdf("Project aim: gait speed and falls in older adults, cohort design."))
-    s = importer.read_source(p)
-    assert s.kind == "pdf" and s.segments[0][0] == "p1" and "gait speed" in s.segments[0][1]
-    q = tmp_path / "scan.pdf"; q.write_bytes(minimal_pdf(None))
-    with pytest.raises(Stop, match="扫描件"):
-        importer.read_source(q)
+    import shutil
+    if shutil.which("pdftotext"):
+        s = importer.read_source(p)
+        assert s.kind == "pdf" and s.segments[0][0] == "p1" and "gait speed" in s.segments[0][1]
+        q = tmp_path / "scan.pdf"; q.write_bytes(minimal_pdf(None))
+        with pytest.raises(Stop, match="扫描件"):
+            importer.read_source(q)
+    else:   # W2: machine without poppler (e.g. CI macOS) -> the honest "no pdftotext" refusal
+        with pytest.raises(Stop, match="pdftotext"):
+            importer.read_source(p)
     d = tmp_path / "old.doc"; d.write_bytes(b"\xd0\xcf")
     with pytest.raises(Stop, match="另存为"):
         importer.read_source(d)

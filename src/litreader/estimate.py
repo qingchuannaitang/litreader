@@ -24,14 +24,14 @@ RATIO = {"writer_in_per_char": 0.57, "writer_out_per_in": 0.44, "vision_in": 190
 def pdf_stats(pdf: Path) -> dict:
     out = {"pages": None, "chars": None, "figures": None, "source": []}
     try:
-        r = subprocess.run(["pdfinfo", str(pdf)], capture_output=True, text=True, timeout=30)
+        r = subprocess.run(["pdfinfo", str(pdf)], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
         m = re.search(r"^Pages:\s+(\d+)", r.stdout, re.M)
         if m:
             out["pages"] = int(m.group(1)); out["source"].append("pdfinfo")
     except (OSError, subprocess.SubprocessError):
         pass
     try:
-        r = subprocess.run(["pdftotext", "-q", str(pdf), "-"], capture_output=True, text=True, timeout=60)
+        r = subprocess.run(["pdftotext", "-q", str(pdf), "-"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
         if r.returncode == 0 and r.stdout.strip():
             t = r.stdout
             out["chars"] = len("".join(t.split())); out["source"].append("pdftotext")

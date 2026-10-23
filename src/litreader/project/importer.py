@@ -73,7 +73,7 @@ def _safe_open_check(p: Path) -> os.stat_result:
 
 
 def _read_bytes(p: Path) -> bytes:
-    fd = os.open(p, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    fd = os.open(p, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0))
     with os.fdopen(fd, "rb") as f:
         return f.read()
 
@@ -131,7 +131,7 @@ def _pptx(b: bytes, src: Source):
 
 def _pdf(p: Path, src: Source):
     try:
-        r = subprocess.run(["pdftotext", "-q", "-layout", str(p), "-"], capture_output=True, text=True, timeout=120)
+        r = subprocess.run(["pdftotext", "-q", "-layout", str(p), "-"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
     except (OSError, subprocess.SubprocessError):
         raise Stop("本机没有可用的 pdftotext（poppler），无法读取 PDF；可另存为 docx 或 md 后再导入")
     pages = r.stdout.split("\f")

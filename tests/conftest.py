@@ -8,6 +8,35 @@ import tempfile  # noqa: E402
 os.environ["LITREADER_KEY_INDEX"] = os.path.join(tempfile.mkdtemp(prefix="litreader-keyidx-"), "key_names.json")
 
 
+class _EmptyKeyring:
+    """W2: tests never see the developer's / CI machine's real keychain."""
+    def __init__(self):
+        self.d = {}
+
+    def get_password(self, s, n):
+        return self.d.get((s, n))
+
+    def set_password(self, s, n, v):
+        self.d[(s, n)] = v
+
+    def delete_password(self, s, n):
+        self.d.pop((s, n))
+
+
+@pytest.fixture(autouse=True)
+def _hermetic_secrets(monkeypatch):
+    """W2: hermetic keys. Real API keys/tokens in the environment are hidden from every test (no accidental paid
+    call, and results don't depend on what the machine happens to have); the keyring is an empty in-memory one.
+    Tests that need a key set a fake one themselves."""
+    for k in list(os.environ):
+        if k.endswith(("_API_KEY", "_API_TOKEN")):
+            monkeypatch.delenv(k, raising=False)
+    from litreader import secrets
+    kr = _EmptyKeyring()
+    monkeypatch.setattr(secrets, "_keyring", lambda: kr)
+    yield kr
+
+
 @pytest.fixture(autouse=True)
 def _fresh_key_session():
     from litreader import secrets

@@ -151,6 +151,7 @@ def test_full_run_events_match_terminal_text(tmp_path, monkeypatch):
 
 def test_topic_folder_decision_has_abc_existing_and_custom(tmp_path, monkeypatch):
     monkeypatch.setenv("MINERU_API_TOKEN", "tok")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "k")   # fake (W2: env is hermetic)
     vault, pdf, cfg = setup_run(tmp_path)
     res, rec = run_bus(cfg, tmp_path, ["y", "", "我的新主题", "y"], tx=topic_llm("new", "老年步态力学"))
     tf = [e for e in rec.of("decision_request") if e["kind"] == "topic_folder"][0]
@@ -162,6 +163,7 @@ def test_topic_folder_decision_has_abc_existing_and_custom(tmp_path, monkeypatch
 
 def test_cost_decline_via_bus(tmp_path, monkeypatch):
     monkeypatch.setenv("MINERU_API_TOKEN", "tok")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "k")   # fake (W2: env is hermetic)
     vault, pdf, cfg = setup_run(tmp_path)
     with pytest.raises(realrun.Cancelled):
         run_bus(cfg, tmp_path, ["n"])

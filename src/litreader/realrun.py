@@ -437,7 +437,7 @@ def _run(cfg: AppConfig, command: str, ui: UI, *, zotero: ZoteroClient | None = 
     job_root = cfg.data_dir / "jobs"
     copy, sha = isolate_copy(pdf, job_root / "_incoming")
     ident = build_identity("users/0", item, att, sha)
-    job = job_root / ident.key.replace("/", "_")
+    job = job_root / ident.fs_key.replace("/", "_")
     job.mkdir(parents=True, exist_ok=True)
     work_pdf = job / "source.pdf"
     if not work_pdf.exists():

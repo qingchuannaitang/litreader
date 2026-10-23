@@ -40,7 +40,7 @@ def kr(monkeypatch):
 @pytest.fixture
 def home(tmp_path, monkeypatch):
     (tmp_path / "v").mkdir()
-    s = (ROOT / "config.example.toml").read_text("utf-8").replace('root = ""', f'root = "{tmp_path / "v"}"', 1)
+    s = (ROOT / "config.example.toml").read_text("utf-8").replace('root = ""', f'root = "{(tmp_path / "v").as_posix()}"', 1)
     (tmp_path / "config.local.toml").write_text(s, "utf-8")
     monkeypatch.chdir(tmp_path)
     return tmp_path

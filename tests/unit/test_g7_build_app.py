@@ -35,13 +35,13 @@ def test_icns_real_l_icon():
 
 
 def test_spec_and_script():
-    spec = (ROOT / "packaging" / "Litreader.spec").read_text()
+    spec = (ROOT / "packaging" / "Litreader.spec").read_text("utf-8")
     assert 'bundle_identifier=BUNDLE_ID' in spec and '"io.github.litreader.app"' in spec and 'name="Litreader.app"' in spec
     assert "console=False" in spec and "CFBundleShortVersionString" in spec
     from litreader.gui import macos
     assert macos.BUNDLE_ID == "io.github.litreader.app"
     sh = ROOT / "scripts" / "build_app.sh"
-    assert os.access(sh, os.X_OK) and "PyInstaller" in sh.read_text()
+    assert os.access(sh, os.X_OK) and "PyInstaller" in sh.read_text("utf-8")
     if sys.platform != "darwin":
         r = subprocess.run(["sh", str(sh)], capture_output=True, text=True)
         assert r.returncode == 2 and "只能在 macOS" in r.stdout

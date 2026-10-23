@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import tempfile
 import uuid
 from dataclasses import asdict, dataclass, field
@@ -28,6 +29,12 @@ class PaperIdentity:
     def key(self) -> str:
         # Identity = library + Parent Key + PDF SHA (DOI is auxiliary only).
         return f"{self.library}__{self.parent_key}__{self.pdf_sha256[:16]}"
+
+    @property
+    def fs_key(self) -> str:
+        """key as a file/folder name part: characters Windows forbids in names (e.g. ":" in "user:0") become "_".
+        "/" is kept (existing "users/0__…" record paths stay where they are on every OS)."""
+        return re.sub(r'[<>:"\\|?*\x00-\x1f]', "_", self.key)
 
 
 @dataclass
@@ -52,7 +59,7 @@ class Store:
         (self.dir / "receipts").mkdir(parents=True, exist_ok=True)
 
     def _rec_path(self, ident: PaperIdentity) -> Path:
-        return self.dir / "records" / f"{ident.key}.json"
+        return self.dir / "records" / f"{ident.fs_key}.json"
 
     def load(self, ident: PaperIdentity) -> PublicationRecord | None:
         p = self._rec_path(ident)

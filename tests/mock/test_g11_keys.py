@@ -71,7 +71,7 @@ def test_status_never_reads_and_uses_name_index(kr):
     assert secrets.status("MINIMAX_API_KEY") == "saved"
     secrets.reset_session()                          # new process
     assert secrets.status("MINIMAX_API_KEY") == "indexed" and kr.reads == []
-    idx = Path(os.environ["LITREADER_KEY_INDEX"]).read_text()
+    idx = Path(os.environ["LITREADER_KEY_INDEX"]).read_text("utf-8")
     assert "MINIMAX_API_KEY" in idx and "fake" not in idx       # names only, never values
 
 
