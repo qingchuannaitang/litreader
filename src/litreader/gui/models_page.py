@@ -4,6 +4,7 @@ slots as stacked cards — 「1 主用 优先使用」 then 备用1…3 — with
 CLI; keys only in the keychain. 解析器 tab: MinerU (in use) and PaddleOCR (备用, not wired into the reading flow yet)."""
 from __future__ import annotations
 
+from litreader.platform_words import keystore_name as _kn, keystore_short as _ks
 import threading
 
 from PySide6.QtCore import QObject, QUrl, Signal
@@ -84,7 +85,7 @@ class SlotCard(QFrame):
         self.model.setPlaceholderText("从厂商文档或控制台复制模型 ID")
         self.key = QLineEdit()
         self.key.setEchoMode(QLineEdit.Password)
-        self.change_key = button("更换", "small", self._unlock_key, "粘贴新的 Key（只存进系统钥匙串）")
+        self.change_key = button("更换", "small", self._unlock_key, f"粘贴新的 Key（只存进{_kn()}）")
         self.key_ref = label("", "sub", wrap=False)
         self.pin = QLineEdit()
         self.pin.setPlaceholderText("可选，自己从厂商价目表抄")
@@ -106,7 +107,7 @@ class SlotCard(QFrame):
         field(0, 1, "模型名（从厂商文档复制）", self.model)
         self.custom_label = field(1, 0, "显示名称（自定义 / 中转站）", self.custom_name, span=2)
         field(2, 0, "URL（OpenAI 兼容 Base URL）", self.url)
-        self.key_cap = field(2, 1, "API Key（只存进系统钥匙串）", hrow(self.key, self.change_key, spacing=8))
+        self.key_cap = field(2, 1, f"API Key（只存进{_kn()}）", hrow(self.key, self.change_key, spacing=8))
         field(3, 0, "输入单价（元 / 1M tokens，可选）", self.pin)
         field(3, 1, "输出单价（元 / 1M tokens，可选）", self.pout)
         g.addWidget(self.key_ref, 8, 1)
@@ -193,9 +194,9 @@ class SlotCard(QFrame):
         self.key.setEnabled(not has)
         self.change_key.setVisible(has)
         self.key.setPlaceholderText("•••••••••••• 已保存" if has else
-                                    ("粘贴 API Key；留空 = 保留钥匙串里原有的（未读取，用到时再读）" if st == "unknown"
-                                     else "粘贴 API Key（只存进系统钥匙串，不写进任何文件）"))
-        self.key_ref.setText(f"钥匙串：{ref} · {secrets.STATUS_ZH[st]}")
+                                    (f"粘贴 API Key；留空 = 保留{_kn()}里原有的（未读取，用到时再读）" if st == "unknown"
+                                     else f"粘贴 API Key（只存进{_kn()}，不写进任何文件）"))
+        self.key_ref.setText(f"{_kn()}：{ref} · {secrets.STATUS_ZH[st]}")
 
     def _unlock_key(self):
         self.key.setEnabled(True)
@@ -262,7 +263,7 @@ class SlotCard(QFrame):
             self.status.setText(f"❌ 保存失败：{e}")
             return
         self.key.clear()
-        self.status.setText(f"✅ 已保存到 {self.owner.path.name}" + ("；Key 已存入钥匙串" if k else ""))
+        self.status.setText(f"✅ 已保存到 {self.owner.path.name}" + (f"；Key 已存入{_kn()}" if k else ""))
         self.editor.refresh()
         self.editor.flash(i, self.status.text())
 
@@ -271,12 +272,12 @@ class SlotCard(QFrame):
             return
         s = self.owner.ms.roles[self.role][self.idx]
         if QMessageBox.question(self, "删除模型", f"删除 {M.ROLES[self.role]}·{M.SLOT_NAMES[self.idx]}（{s.vendor} {s.model}）？\n"
-                                "钥匙串中的 Key 不会删除。") != QMessageBox.Yes:
+                                f"{_kn()}中的 Key 不会删除。") != QMessageBox.Yes:
             return
         self.owner.ms.roles[self.role].pop(self.idx)
         self.owner.save()
         self.editor.refresh()
-        self.editor.flash(None, "✅ 已删除（Key 仍在钥匙串）")
+        self.editor.flash(None, f"✅ 已删除（Key 仍在{_kn()}）")
 
     def _test(self):
         try:
@@ -347,7 +348,7 @@ class VisionShare(QWidget):
             self.confirm.setText(f"我已在厂商文档确认「{w.vendor} {w.model}」支持图片输入，把它标记为「支持看图」")
         self.editor.setVisible(not on)
         if on:
-            text = (f"✅ 看图使用主笔主用：{w.vendor} {w.model}（Key：钥匙串里的 {w.key_ref}，与主笔同一把，本次打开只读一次）。"
+            text = (f"✅ 看图使用主笔主用：{w.vendor} {w.model}（Key：{_kn()}里的 {w.key_ref}，与主笔同一把，本次打开只读一次）。"
                     + ("原来单独配置的看图模型仍保存着，关闭共用即恢复使用。" if ms.roles["vision"] else ""))
         elif w is None:
             text = "要共用，请先在「主笔」页签设置主用模型。"
@@ -448,7 +449,7 @@ class ModelsPage(QWidget):
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.addWidget(body)
-        lay.addWidget(label("和终端共用同一个 models.toml；API Key 只存进系统钥匙串（Keychain），界面不显示明文。"
+        lay.addWidget(label(f"和终端共用同一个 models.toml；API Key 只存进{_kn()}，界面不显示明文。"
                             "每个角色 1 个主用 + 最多 3 个备用，主用失败时按顺序自动换备用。", "muted"))
         self.ms, self.path, err = None, None, None
         if cfg is None:
@@ -581,7 +582,7 @@ class ParserCard(QFrame):
                                "MinerU：查询一个不存在的任务（不上传、不计费）判断 Token 是否有效" if pid == "mineru"
                                else "PaddleOCR：仅本地检查（没有可核实的免费鉴权接口）", icon="refresh-cw")
         self._tested.connect(self._show_test)
-        v.addWidget(label(f"Token（钥匙串名称：{ref}）", "th", wrap=False))
+        v.addWidget(label(f"Token（{_kn()}名称：{ref}）", "th", wrap=False))
         v.addLayout(hrow(self.edit, self.status, self.tested, self.change, self.save_btn, self.test_btn, spacing=8))
         self.msg = label("", "sub")
         self.msg.setVisible(False)
@@ -601,9 +602,9 @@ class ParserCard(QFrame):
 
     def refresh(self):
         st = self.state()
-        text, kind = {"env": ("来自环境变量", "info"), "saved": ("钥匙串已保存", "ok"),
+        text, kind = {"env": ("来自环境变量", "info"), "saved": (f"{_ks()}已保存", "ok"),
                       "indexed": ("已保存（未读取）", "ok"), "unknown": ("未读取（用到时再读）", "gray"),
-                      "denied": ("钥匙串读取被拒绝", "stop"), "missing": ("未保存", "trial")}[st]
+                      "denied": (f"{_ks()}读取被拒绝", "stop"), "missing": ("未保存", "trial")}[st]
         self.status.setText(text)
         self.status.setProperty("role", f"pill_{kind}")
         from .widgets import repolish
@@ -613,7 +614,7 @@ class ParserCard(QFrame):
         self.edit.setEnabled(not has)
         self.change.setVisible(has)
         self.save_btn.setVisible(not has)
-        self.edit.setPlaceholderText("•••••••••••••••• 已保存" if has else "粘贴 Token（只存进系统钥匙串，不写进任何文件）")
+        self.edit.setPlaceholderText("•••••••••••••••• 已保存" if has else f"粘贴 Token（只存进{_kn()}，不写进任何文件）")
         self.save_btn.setEnabled(False)
         self.test_btn.setEnabled(st != "missing")
 
@@ -665,7 +666,7 @@ class ParserCard(QFrame):
         except Exception as e:  # noqa: BLE001
             self._say(f"❌ 保存失败：{type(e).__name__}")
             return
-        self._say("✅ 钥匙串已保存（界面不会再显示它）。可以点「测试连接」。")
+        self._say(f"✅ {_kn()}已保存（界面不会再显示它）。可以点「测试连接」。")
         self.refresh()
 
 
@@ -678,7 +679,7 @@ class ParserPanel(QWidget):
         v.setContentsMargins(0, 0, 0, 0)
         c, cl = card(margins=(24, 20, 24, 22), spacing=12)
         v.addWidget(c)
-        cl.addLayout(hrow(label("PDF 解析器", "h2", wrap=False), None, label("Token 只存进系统钥匙串", "sub", wrap=False)))
+        cl.addLayout(hrow(label("PDF 解析器", "h2", wrap=False), None, label(f"Token 只存进{_kn()}", "sub", wrap=False)))
         cl.addWidget(label("精读前先把 PDF 解析成文字、表格和图。本版本精读流程使用 MinerU；PaddleOCR 的 Token 可以先保存，"
                            "接入后作为备用解析器。解析结果缓存在本机，同一篇不会重复上传。", "sub"))
         self.cards = [ParserCard(*x) for x in PARSER_CARDS]

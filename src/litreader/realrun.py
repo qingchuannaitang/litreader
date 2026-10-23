@@ -8,6 +8,7 @@ vision / writer / validator / cross-check / wording judge -> topic folder (reuse
 """
 from __future__ import annotations
 
+from litreader.platform_words import keystore_name as _kn, keystore_prompt_hint
 import json
 import re
 from dataclasses import asdict
@@ -139,7 +140,7 @@ def preflight_keys(cfg: AppConfig, env, need_mineru: bool = True) -> None:
                     break
                 errs.append(f"{p.key_env} 未找到")
             except KeychainError as e:
-                errs.append(f"{p.key_env} 钥匙串读取失败（KEYCHAIN_ERROR: {e.kind}）")
+                errs.append(f"{p.key_env} {_kn()}读取失败（KEYCHAIN_ERROR: {e.kind}）")
         if errs:
             problems.append(f"{ROLE_ZH.get(st, st)}：" + "；".join(errs))
     if need_mineru:
@@ -148,10 +149,10 @@ def preflight_keys(cfg: AppConfig, env, need_mineru: bool = True) -> None:
             if not ok:
                 problems.append(f"MinerU 解析：{cfg.mineru_token_name} 未找到")
         except KeychainError as e:
-            problems.append(f"MinerU 解析：{cfg.mineru_token_name} 钥匙串读取失败（KEYCHAIN_ERROR: {e.kind}）")
+            problems.append(f"MinerU 解析：{cfg.mineru_token_name} {_kn()}读取失败（KEYCHAIN_ERROR: {e.kind}）")
     if problems:
         raise Stop("API Key 预检未通过（尚未上传、未调用任何模型）：" + " | ".join(problems)
-                   + "。请在「模型设置」对应页签保存 Key；若提示钥匙串读取失败，请在弹出的系统授权里选择「始终允许」后重试。")
+                   + f"。请在「模型设置」对应页签保存 Key；" + keystore_prompt_hint())
 
 
 def _chain(cfg: AppConfig, station: str):

@@ -1,5 +1,6 @@
 """GUI v1 (Stage G2): worker/bus bridge, offscreen window smoke run with fakes, model settings, avatar, presets.
 No network and no paid API: Zotero / MinerU / LLM are local fakes (gui_fakes.py)."""
+from litreader.platform_words import keystore_name, keystore_short
 import os
 import sys
 import time
@@ -481,7 +482,7 @@ def test_parser_tokens_saved_to_keychain_never_displayed(app, tmp_path, kr, monk
     mineru.edit.setText(secret)
     mineru.save()
     assert kr.get_password("litreader", "MINERU_API_TOKEN") == secret
-    assert mineru.edit.text() == "" and mineru.status.text() == "钥匙串已保存" and paddle.status.text() == "未读取（用到时再读）"
+    assert mineru.edit.text() == "" and mineru.status.text() == f"{keystore_short()}已保存" and paddle.status.text() == "未读取（用到时再读）"
     assert not mineru.edit.isEnabled()
     mineru._unlock()
     assert mineru.edit.isEnabled()

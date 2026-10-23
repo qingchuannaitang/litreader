@@ -31,6 +31,7 @@ Sources:
 """
 from __future__ import annotations
 
+from litreader.platform_words import keystore_name as _kn
 from urllib.parse import urlsplit
 
 PRESETS = [
@@ -80,7 +81,7 @@ for _p in PRESETS:
 CHOICES = ["openai", "gemini", "anthropic", "minimax_cn", "minimax_intl", "deepseek", "kimi_cn", "kimi_intl", "glm_cn",
            "glm_intl", "custom"]
 CUSTOM = {"id": "custom", "names": (), "label": "自定义 / 中转站", "url": "", "key_ref": "", "json_mode": False,
-          "note": "填写中转站或其他厂商提供的 OpenAI 兼容 Base URL（通常以 /v1 结尾）。Key 只存钥匙串。"}
+          "note": f"填写中转站或其他厂商提供的 OpenAI 兼容 Base URL（通常以 /v1 结尾）。Key 只存{_kn()}。"}
 
 
 def by_id(pid: str) -> dict | None:

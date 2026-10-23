@@ -1,4 +1,5 @@
 """G7-4: parser token cards — 保存 grey until input, 「钥匙串已保存」 after save, 测试连接 with fakes (no network)."""
+from litreader.platform_words import keystore_name, keystore_short
 import json
 import os
 import sys
@@ -53,7 +54,7 @@ def test_parser_card_save_disabled_then_saved_and_test(app, monkeypatch):
     c.edit.setText("tok-123456789012345")
     assert c.save_btn.isEnabled()
     c.save()
-    assert c.status.text() == "钥匙串已保存" and "钥匙串已保存" in c.msg.text()
+    assert c.status.text() == f"{keystore_short()}已保存" and f"{keystore_name()}已保存" in c.msg.text()
     assert kr.d[("litreader", "MINERU_API_TOKEN")] == "tok-123456789012345"
     assert "tok-" not in c.msg.text() + c.status.text()
     c.test()

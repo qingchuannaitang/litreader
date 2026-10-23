@@ -1,5 +1,6 @@
 """G11-1: lazy keychain reads — no read at GUI startup / settings render; one read per key per process; a denied
 read is not retried in a loop; 测试连接 reads only its own key. Fakes only."""
+from litreader.platform_words import keystore_name, keystore_short
 import os
 import sys
 from pathlib import Path
@@ -122,4 +123,4 @@ def test_gui_startup_and_settings_render_read_nothing(app, tmp_path, kr):
     c = ParserCard(*PARSER_CARDS[0], req=req)
     assert c.status.text() == "未读取（用到时再读）" and c.test_btn.isEnabled()
     c.test()                                          # 测试连接 reads only this card's token
-    assert kr.reads == ["MINERU_API_TOKEN"] and c.status.text() == "钥匙串已保存"
+    assert kr.reads == ["MINERU_API_TOKEN"] and c.status.text() == f"{keystore_short()}已保存"

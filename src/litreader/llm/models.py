@@ -8,6 +8,7 @@ Stored in models.toml next to config.local.toml. No built-in model list.
 """
 from __future__ import annotations
 
+from litreader.platform_words import keystore_name as _kn
 import base64
 import json
 import re
@@ -150,7 +151,7 @@ def _val(v) -> str:
 
 def dumps(ms: ModelSettings) -> str:
     out = ["# litreader 模型设置（由 `litreader models set` 维护，可手工编辑）。不含任何 API Key：",
-           "# key_ref 是钥匙串里的名称（litreader models set 时输入 Key 即存入钥匙串）。",
+           f"# key_ref 是{_kn()}里的名称（litreader models set 时输入 Key 即存入{_kn()}）。",
            "# price_in / price_out：可选，元/百万 tokens（你自己从厂商价目表抄写；程序不内置价格）。", ""]
     for role, label in ROLES.items():
         out.append(f"# ===== {label}（{role}）：第 1 个为主用，其后最多 3 个备用 =====")

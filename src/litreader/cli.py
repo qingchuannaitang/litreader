@@ -5,7 +5,7 @@
   litreader gui                               图形界面（PySide6；pip install -e ".[gui]"）
   litreader doctor                            环境自检（不写文件、不上传、不调用收费接口）
   litreader models list | set 角色 [序号] | test [角色] [序号] | remove 角色 序号 | migrate
-  litreader key set 名称 | key test           钥匙串
+  litreader key set 名称 | key test           系统密钥存储（Keychain / 凭据管理器）
   litreader find "题名"                        在 Zotero 中查找（只读）
   litreader templates refresh|list|show|lint|export|approve|reject|disable|enable|prefer|pin|unpin|rollback|recover|draft
   litreader inspect-parse [任务]                 已缓存解析结果的每页块类型统计（排查“抽取完整度”用）
@@ -14,6 +14,7 @@
 """
 from __future__ import annotations
 
+from litreader.platform_words import keystore_name as _kn
 import argparse
 import json
 import getpass
@@ -65,7 +66,7 @@ def cmd_doctor(a) -> int:
     if not (cfg.zotero_data_dir / "storage").is_dir():
         print("   → 运行 litreader setup zotero 自动查找 Zotero 数据目录（只读，不修改 Zotero）")
     ok, backend = secrets.selftest()
-    print(f"{_ok(ok)} 钥匙串（keyring）：{backend}")
+    print(f"{_ok(ok)} {_kn()}：{backend}")
     print(f"{_ok(bool(secrets.get(cfg.mineru_token_name)))} MinerU Token（{cfg.mineru_token_name}）："
           f"{'已保存' if secrets.get(cfg.mineru_token_name) else '未找到 → litreader key set ' + cfg.mineru_token_name}")
     if cfg.llm_error:
@@ -116,7 +117,7 @@ def cmd_doctor(a) -> int:
 def cmd_key(a) -> int:
     if a.action == "test":
         ok, backend = secrets.selftest()
-        print(f"{_ok(ok)} 钥匙串自检：{backend}")
+        print(f"{_ok(ok)} {_kn()}自检：{backend}")
         return 0 if ok else 1
     if not a.name:
         print("用法：litreader key set 名称（例如 MINERU_API_TOKEN）")
@@ -126,7 +127,7 @@ def cmd_key(a) -> int:
         print("❌ 没有输入内容，未保存")
         return 1
     secrets.set_secret(a.name, v)
-    print(f"✅ {a.name} 已保存到钥匙串（长度 {len(v)}）")
+    print(f"✅ {a.name} 已保存到{_kn()}（长度 {len(v)}）")
     return 0
 
 
@@ -166,7 +167,7 @@ def cmd_models(a) -> int:
         d = tomllib.loads(cfg.path.read_text("utf-8"))
         ms = M.migrate_legacy(d)
         M.save(ms, cfg.models_path)
-        print(f"✅ 已把旧的模型设置迁移到 {cfg.models_path}（Key 仍在钥匙串原名称下）。")
+        print(f"✅ 已把旧的模型设置迁移到 {cfg.models_path}（Key 仍在{_kn()}原名称下）。")
         print("   config.local.toml 里的 [providers]/[stations] 已不再使用，可保留或删除。")
         return 0
     cfg, ms = _load_models(a)
@@ -197,7 +198,7 @@ def cmd_models(a) -> int:
             return 1
         s = ms.roles[role].pop(i)
         M.save(ms, cfg.models_path)
-        print(f"✅ 已删除 {M.ROLES[role]} 第 {i + 1} 个（{s.vendor} {s.model}）；钥匙串中的 Key 未删除")
+        print(f"✅ 已删除 {M.ROLES[role]} 第 {i + 1} 个（{s.vendor} {s.model}）；{_kn()}中的 Key 未删除")
         return 0
     if a.action == "set":
         return _models_set(a, cfg, ms)
@@ -273,7 +274,7 @@ def _models_set(a, cfg, ms) -> int:
     new.validate(f"{M.ROLES[role]}·{M.SLOT_NAMES[i]}")
     has = bool(secrets.get(key_ref))
     if not a.no_key:
-        k = getpass.getpass(f"API Key（存入钥匙串，名称 {key_ref}；屏幕不显示"
+        k = getpass.getpass(f"API Key（存入{_kn()}，名称 {key_ref}；屏幕不显示"
                             f"{'；直接回车=保留已有' if has else ''}）：").strip()
         if k:
             secrets.set_secret(key_ref, k)

@@ -6,11 +6,11 @@ requires-python = ">=3.11"
 license = {text = "AGPL-3.0-or-later"}
 authors = [{name = "王鸿涛 (qingchuannaitang)"}]
 classifiers = ["License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)"]
-dependencies = []
+dependencies = ["keyring>=24"]
 
 [project.optional-dependencies]
 dev = ["pytest"]
-mac = ["keyring>=24"]
+mac = []   # kept for old install commands; keyring is now a core dependency
 gui = ["PySide6-Essentials>=6.6", "pyobjc-framework-Cocoa>=10; sys_platform == 'darwin'",
        "pyobjc-framework-UserNotifications>=10; sys_platform == 'darwin'"]
 

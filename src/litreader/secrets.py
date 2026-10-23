@@ -2,6 +2,7 @@
 Values are never printed or written to files. keyring is optional (pip install keyring)."""
 from __future__ import annotations
 
+from litreader.platform_words import keystore_name as _kn, keystore_short as _ks
 import json
 import os
 from collections.abc import Mapping
@@ -75,7 +76,7 @@ class KeychainError(RuntimeError):
     """The keyring backend failed (locked, access denied, prompt dismissed…) — NOT the same as "no such key"."""
 
     def __init__(self, name: str, exc: BaseException):
-        super().__init__(f"钥匙串读取失败（{type(exc).__name__}）：{name}")
+        super().__init__(f"{_kn()}读取失败（{type(exc).__name__}）：{name}")
         self.name, self.kind = name, type(exc).__name__
 
 
@@ -118,7 +119,7 @@ def status(name: str) -> str:
     return "indexed" if name in _index() else "unknown"
 
 
-STATUS_ZH = {"env": "来自环境变量", "saved": "已保存", "denied": "钥匙串读取被拒绝",
+STATUS_ZH = {"env": "来自环境变量", "saved": "已保存", "denied": f"{_ks()}读取被拒绝",
              "indexed": "已保存（未读取）", "unknown": "未读取（用到时再读）"}
 
 
