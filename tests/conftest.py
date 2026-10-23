@@ -88,3 +88,25 @@ def fake_render(ident, analysis):
 
 def fake_render_v2(ident, analysis):
     return fake_render(ident, analysis).replace("三分钟读懂本文", "三分钟读懂本文（新版模板）")
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """W2: tidy Qt shutdown. Without this the interpreter could crash *after* all tests passed (top-level widgets
+    from many tests destroyed in arbitrary order at exit) -> CI exit code 134/139."""
+    import sys
+    if "PySide6.QtWidgets" not in sys.modules:
+        return
+    from PySide6.QtCore import QCoreApplication, QEvent, QThread
+    from PySide6.QtWidgets import QApplication
+    app = QApplication.instance()
+    if app is None:
+        return
+    import gc
+    for w in QApplication.topLevelWidgets():
+        for th in w.findChildren(QThread):
+            th.quit(); th.wait(5000)
+        w.close()
+        w.deleteLater()
+    QCoreApplication.sendPostedEvents(None, QEvent.DeferredDelete)
+    app.processEvents()
+    gc.collect()

@@ -620,3 +620,22 @@ def test_library_new_template_and_project_dialogs(app, tmp_path, kr, monkeypatch
     page.projects.new_project()
     assert page.projects.list.count() == 2
     page.close()
+
+
+def test_w2_gc_disabled_while_worker_runs_and_restored(app):
+    import gc
+    from litreader.gui import bridge
+    gate = __import__("threading").Event()
+    seen = {}
+
+    def runner(ui):
+        seen["enabled_in_worker"] = gc.isenabled()
+        gate.wait(5)
+        return {}
+    w = bridge.RunWorker(runner)
+    th = bridge.start(w)
+    spin(app, lambda: "enabled_in_worker" in seen)
+    gate.set()
+    th.wait(5000)
+    spin(app, lambda: gc.isenabled())
+    assert seen["enabled_in_worker"] is False and gc.isenabled()

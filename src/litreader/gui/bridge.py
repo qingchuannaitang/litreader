@@ -100,9 +100,52 @@ def start(worker: RunWorker, parent: QObject | None = None) -> QThread:
     th.started.connect(worker.run)
     worker.finished.connect(th.quit, Qt.DirectConnection)   # QThread.quit is thread-safe; no GUI-loop round trip
     th._worker = worker   # keep the worker alive as long as its thread
-    # W2: collect garbage on the GUI thread first. Otherwise a dead Qt widget waiting in a reference cycle can be
-    # freed by a garbage collection that happens to run inside the worker thread -> crash (seen on CI macOS).
-    import gc
-    gc.collect()
+    _gc_guard_enter()
+    th.finished.connect(_gc_receiver().leave, Qt.QueuedConnection)   # runs on the GUI thread
     th.start()
     return th
+
+
+# W2: Python's automatic garbage collection runs in whichever thread happens to allocate. If it runs inside the worker
+# while a dead Qt widget sits in a reference cycle, Qt objects get destroyed off the GUI thread -> crash (seen on CI
+# macOS, py3.11). While any worker runs, automatic gc is off and the GUI thread collects on a timer instead.
+_gc_state = {"n": 0, "timer": None, "was_enabled": True}
+
+
+def _gc_guard_enter() -> None:
+    import gc
+    from PySide6.QtCore import QTimer
+    gc.collect()
+    if _gc_state["n"] == 0:
+        _gc_state["was_enabled"] = gc.isenabled()
+        gc.disable()
+        t = _gc_state["timer"]
+        if t is None:
+            t = _gc_state["timer"] = QTimer()
+            t.setInterval(500)
+            t.timeout.connect(gc.collect)
+        t.start()
+    _gc_state["n"] += 1
+
+
+class _GcReceiver(QObject):
+    @Slot()
+    def leave(self) -> None:
+        _gc_guard_leave()
+
+
+def _gc_receiver() -> "_GcReceiver":
+    r = _gc_state.get("receiver")
+    if r is None:
+        r = _gc_state["receiver"] = _GcReceiver()
+    return r
+
+
+def _gc_guard_leave() -> None:
+    import gc
+    _gc_state["n"] = max(0, _gc_state["n"] - 1)
+    if _gc_state["n"] == 0:
+        if _gc_state["timer"] is not None:
+            _gc_state["timer"].stop()
+        if _gc_state["was_enabled"]:
+            gc.enable()
