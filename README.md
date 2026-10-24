@@ -1,6 +1,6 @@
 # litreader：Zotero 论文 → AI 精读笔记 → Obsidian
 
-litreader 是一个 macOS 桌面工具（GUI，图形界面）。你用一句话指定 Zotero 里的一篇论文，它会：
+litreader 是一个 macOS / Windows 桌面工具（GUI，图形界面）。你用一句话指定 Zotero 里的一篇论文，它会：
 
 1. 在 Zotero（文献管理软件）里找到这篇论文和它的 PDF 附件（**只读**，不修改 Zotero）；
 2. 用 MinerU（云端 PDF 解析服务）或 PaddleOCR 把 PDF 解析成文字块和图表；
@@ -10,11 +10,11 @@ litreader 是一个 macOS 桌面工具（GUI，图形界面）。你用一句话
 
 每次运行前都会显示费用估算（cost estimate），等你确认后才调用收费接口。
 
-## 普通用户安装（.app）
+## 普通用户安装（Mac .app）
 
 不想用命令行的话，直接下载打包好的 Mac 应用：
 
-1. 打开 [Releases（发布页）](https://github.com/qingchuannaitang/litreader/releases/latest)，下载 `Litreader-<版本>-mac.zip`（如 `Litreader-1.0.3-mac.zip`），双击解压得到 `Litreader.app`。
+1. 打开 [Releases（发布页）](https://github.com/qingchuannaitang/litreader/releases/latest)，下载 `Litreader-<版本>-mac.zip`（如 `Litreader-1.0.4-mac.zip`），双击解压得到 `Litreader.app`。
 2. 把 `Litreader.app` 拖进「应用程序」（Applications）文件夹。如果里面已有旧版，先删掉旧的再拖入，否则会变成「Litreader 2.app」。
 3. 第一次双击时，macOS 会提示「无法验证开发者」或「Apple 无法检查其是否包含恶意软件」（本应用暂未做苹果签名与公证）。**点「完成」，不要点「移到废纸篓」**，然后用下面任一方法打开：
    - **方法一（系统设置）：** 打开「系统设置 → 隐私与安全性」，拉到最下面，看到「已阻止 Litreader」，点「仍要打开」，输入开机密码确认。
@@ -39,6 +39,19 @@ litreader 是一个 macOS 桌面工具（GUI，图形界面）。你用一句话
   第一行删掉多出来的「Litreader 2」，第二行把应用复制进「应用程序」，第三行去掉下载隔离标记，免得打开时被拦。
 - **固定到程序坞（Dock）：** 打开 Litreader 后，右键程序坞里的图标，选「选项 → 在程序坞中保留」。
 
+## 普通用户安装（Windows）
+
+1. 打开 [Releases（发布页）](https://github.com/qingchuannaitang/litreader/releases/latest)，下载 `Litreader-<版本>-win.zip`（如 `Litreader-1.0.4-win.zip`）。
+2. 右键 →「全部解压缩」，把得到的 `Litreader` 文件夹放到一个**短路径、最好不含中文和空格**的位置，例如 `D:\Litreader`（路径太长时部分文件可能解压失败）。更新时先删掉旧的 `Litreader` 文件夹再放新的。
+3. 双击文件夹里的 `Litreader.exe`。本应用暂未做代码签名，第一次打开时 Windows 会弹出蓝色的「Windows 已保护你的电脑」（SmartScreen，智能屏幕筛选）：点 **「更多信息」→「仍要运行」**。之后不会再问。
+4. **第一次启动会自动生成配置文件** `%USERPROFILE%\litreader\config.local.toml`（如 `C:\Users\<你>\litreader\config.local.toml`），已有的文件绝不会被覆盖。接着在「基础设置」里：
+   - 点「一键检测 Zotero」，确认后保存（只读，不改 Zotero）；
+   - 在「Obsidian」卡片选好你的库（含 `.obsidian` 文件夹）并保存；
+   - 保存后**关闭并重新打开** Litreader，再到「模型设置」添加模型。
+5. **API Key 存在 Windows 凭据管理器（Credential Manager）**，不写进任何文件，界面不显示明文。可在「控制面板 → 凭据管理器 → Windows 凭据」里查看或删除（名称以 litreader 开头）。
+
+通知可在 Windows「设置 → 系统 → 通知」里开关。运行要求同下。
+
 ## 运行要求（Requirements）
 
 - macOS（Apple Silicon 或 Intel），Python 3.11 及以上（推荐用 Homebrew 安装 `python@3.12`）
@@ -54,7 +67,7 @@ litreader 是一个 macOS 桌面工具（GUI，图形界面）。你用一句话
 ## 命令行安装（Install from source）
 
 ```bash
-cd ~ && unzip -o -q ~/Downloads/litreader-1.0.3.zip   # 或：git clone https://github.com/qingchuannaitang/litreader.git
+cd ~ && unzip -o -q ~/Downloads/litreader-1.0.4.zip   # 或：git clone https://github.com/qingchuannaitang/litreader.git
 cd ~/litreader
 python3 -m venv .venv
 ./.venv/bin/pip install -e ".[mac,gui]"

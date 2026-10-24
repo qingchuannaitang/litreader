@@ -556,7 +556,7 @@ def test_sidebar_version_and_appearance_toggle_persist(app, tmp_path, kr):
     from litreader.gui.prefs import Prefs
     cfg, kw, _ = gui_fakes.environment(tmp_path)
     win = MainWindow(cfg=cfg, run_kwargs=kw, data_dir=tmp_path / "guidata")
-    assert win.version_label.text() == f"Litreader v{__version__}" and __version__ == "1.0.3"
+    assert win.version_label.text() == f"Litreader v{__version__}" and __version__ == "1.0.4"
     assert list(win.appearance_seg.buttons) == ["light", "dark", "system"]
     assert [b.text() for b in win.appearance_seg.buttons.values()] == ["浅色", "深色", "跟随系统"]
     win.appearance_seg.buttons["dark"].click()

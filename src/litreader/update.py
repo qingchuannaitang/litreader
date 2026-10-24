@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 import urllib.request
 from datetime import date, datetime, timedelta
 
@@ -38,6 +39,12 @@ def validate(d) -> dict | None:
         out["download_url"] = ""
     if out["qq_group"] and not re.fullmatch(r"\d{5,12}", out["qq_group"]):
         out["qq_group"] = ""
+    # W6: optional per-platform links {"mac": …, "win": …}; old apps ignore the key and keep using download_url
+    dl = d.get("downloads") if isinstance(d.get("downloads"), dict) else {}
+    plat = "mac" if sys.platform == "darwin" else "win" if sys.platform.startswith("win") else ""
+    u = str(dl.get(plat) or "").strip() if plat else ""
+    if u.startswith("https://"):
+        out["download_url"] = u
     return out
 
 
