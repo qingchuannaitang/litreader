@@ -1,6 +1,10 @@
 {
-  "version": "1.0.3",
-  "notes": "v1.0.3：看图模型改为可选（留空即跳过），可与主笔共用；README 增加启动台与程序坞说明",
+  "version": "1.0.4",
+  "notes": "v1.0.4：首个 Windows 版；首次启动自动生成配置文件；按平台显示界面文字与路径",
   "download_url": "https://github.com/qingchuannaitang/litreader/releases/latest",
-  "qq_group": "1126184965"
+  "qq_group": "1126184965",
+  "downloads": {
+    "mac": "https://github.com/qingchuannaitang/litreader/releases/download/v1.0.4/Litreader-1.0.4-mac.zip",
+    "win": "https://github.com/qingchuannaitang/litreader/releases/download/v1.0.4/Litreader-1.0.4-win.zip"
+  }
 }
