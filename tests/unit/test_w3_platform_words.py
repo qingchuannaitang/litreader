@@ -52,11 +52,11 @@ def _reveal_calls(monkeypatch, tmp_path, plat, target):
 
 def test_reveal_windows_selects_file(monkeypatch, tmp_path):
     f = tmp_path / "笔记.md"; f.write_text("x", encoding="utf-8")
-    assert _reveal_calls(monkeypatch, tmp_path, "win32", f) == [["explorer", f"/select,{f}"]]
+    assert _reveal_calls(monkeypatch, tmp_path, "win32", f) == [result_mod().windows_select_command(f)]   # W5: one string, quoted path
 
 
 def test_reveal_windows_folder(monkeypatch, tmp_path):
-    assert _reveal_calls(monkeypatch, tmp_path, "win32", tmp_path) == [["explorer", str(tmp_path)]]
+    assert _reveal_calls(monkeypatch, tmp_path, "win32", tmp_path) == [["explorer", __import__("ntpath").normpath(str(tmp_path))]]
 
 
 def test_reveal_mac_open_R(monkeypatch, tmp_path):
@@ -72,3 +72,8 @@ def test_reveal_linux_opens_folder(monkeypatch, tmp_path):
     calls, urls = [], []
     result.reveal(str(f), opener=urls.append, runner=calls.append)
     assert calls == [] and urls[0].toLocalFile().rstrip("/") == str(tmp_path).replace("\\", "/")
+
+
+def result_mod():
+    from litreader.gui import result
+    return result

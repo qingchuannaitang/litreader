@@ -6,6 +6,8 @@ confirms (backup .bak-<time> first, TOML validated). Tokens: masked input → sy
 values are never shown, only 已保存 / 未保存 / 来自环境变量."""
 from __future__ import annotations
 
+from ..platform_words import display_path
+
 import threading
 from pathlib import Path
 
@@ -65,7 +67,7 @@ class ZoteroSetupCard(QWidget):
         g.setVerticalSpacing(8)
         for i, (k, val) in enumerate((("配置文件", self.cfg.path), ("Zotero 本地接口", f"{self.cfg.zotero_api}（只读）"),
                                       ("Zotero 数据目录", self.cfg.zotero_data_dir), ("Obsidian 库", self.cfg.vault_root),
-                                      ("笔记写入", f"{self.cfg.dry_run_root}/"))):
+                                      ("笔记写入", display_path(f"{self.cfg.dry_run_root}/")))):
             g.addWidget(label(k, "th", wrap=False), i, 0)
             g.addWidget(path_label(str(val)), i, 1)
         g.setColumnMinimumWidth(0, 140)
@@ -279,7 +281,7 @@ class ObsidianCard(QWidget):
         self.pending = None
         txt = self.path.text().strip()
         out = self.output_dir()
-        self.papers.setText(f"{txt or '<库>'}/{out}/{self.papers_dir}/" if out else "—")
+        self.papers.setText(display_path(f"{txt or '<库>'}/{out}/{self.papers_dir}/") if out else "—")
         if not txt:
             self.status.addWidget(label("还没有填写库路径。", "warn"))
             return

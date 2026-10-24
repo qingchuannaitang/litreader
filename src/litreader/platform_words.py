@@ -30,3 +30,20 @@ def keystore_prompt_hint(platform: str | None = None) -> str:
     if _plat(platform) == "mac":
         return "若提示钥匙串读取失败，请在弹出的系统授权里选择「始终允许」后重试。"
     return ""
+
+
+def display_path(path, platform: str | None = None) -> str:
+    """W5: paths shown to the user use the platform's separator (Windows: all backslashes, no mixed D:\\a/b)."""
+    s = str(path)
+    return s.replace("/", "\\") if _plat(platform) == "win" else s
+
+
+def shortcut(key: str, platform: str | None = None) -> str:
+    """⌘O on macOS, Ctrl+O elsewhere (tooltip text only)."""
+    return f"⌘{key}" if _plat(platform) == "mac" else f"Ctrl+{key}"
+
+
+def notification_hint(platform: str | None = None) -> str:
+    return {"mac": "第一次通知时 macOS 会询问是否允许；之后可在「系统设置 → 通知」里修改。拒绝后界面内照常提示。",
+            "win": "可在 Windows「设置 → 系统 → 通知」里开关 Litreader 的通知。关闭后界面内照常提示。",
+            "linux": "通知由桌面环境显示；关闭后界面内照常提示。"}[_plat(platform)]

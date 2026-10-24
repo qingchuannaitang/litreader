@@ -21,6 +21,7 @@ from PySide6.QtWidgets import QFrame, QGridLayout, QHBoxLayout, QStackedWidget, 
 from ..llm.models import ROLES
 from . import note_html, runner, theme
 from .home import RecentList
+from ..platform_words import display_path, shortcut
 from .widgets import (ElidedLabel, Segmented, button, card, clear, empty_state, hrow, label, page, path_label, pill,
                       table)
 
@@ -33,18 +34,33 @@ DRAWER_W = 640
 PER_PAGE = 5
 
 
-def reveal(path: str, opener=None, runner=None) -> None:
+def windows_select_command(path) -> str:
+    """explorer needs `/select,"C:\\dir\\file name.md"` as ONE token with backslashes. A list arg goes through
+    list2cmdline, which quotes the whole `/select,…` token and explorer then falls back to 文档 (W5 bug)."""
+    import ntpath
+    return f'explorer /select,"{ntpath.normpath(str(path))}"'
+
+
+def reveal(path: str, opener=None, runner=None, platform: str | None = None) -> None:
     """Show the file in the system file manager: macOS `open -R` (Finder selects it), Windows
-    `explorer /select,<path>` (资源管理器 selects it; list args, no shell); elsewhere open the folder."""
+    `explorer /select,"<path>"` (资源管理器 selects it; one command string, no shell); a missing file opens its
+    folder (or nothing if that is gone too); elsewhere open the folder."""
     p = Path(path)
-    mac, win = sys.platform == "darwin", sys.platform.startswith("win")
-    if opener is None and p.exists() and (mac or win):
+    plat = platform or sys.platform
+    mac, win = plat == "darwin", plat.startswith("win")
+    if opener is None and (mac or win):
         import subprocess
         run = runner or subprocess.Popen
-        if mac:
-            run(["open", "-R", str(p)])
-        else:
-            run(["explorer", f"/select,{p}"] if p.is_file() else ["explorer", str(p)])
+        if p.is_file():
+            run(["open", "-R", str(p)] if mac else windows_select_command(p))
+            return
+        folder = p if p.is_dir() else p.parent
+        if folder.is_dir():
+            if mac:
+                run(["open", str(folder)])
+            else:
+                import ntpath
+                run(["explorer", ntpath.normpath(str(folder))])
         return
     (opener or QDesktopServices.openUrl)(QUrl.fromLocalFile(str(p.parent if p.is_file() else p)))
 
@@ -83,7 +99,7 @@ class ActionBar(QWidget):
         for k, b in self.seg.buttons.items():
             b.clicked.connect(lambda _=False, k=k: (self.seg.set_current(None), self.segment.emit(k)))
         self.obs_btn = button("在 Obsidian 打开", "primary" if primary else None, lambda: self.obsidian.emit(),
-                              "在 Obsidian 中打开这篇笔记（⌘O）")
+                              f"在 Obsidian 中打开这篇笔记（{shortcut('O')}）")
         self.zot_btn = button("在 Zotero 打开", None, lambda: self.zotero.emit(), "zotero://select —— 在 Zotero 里选中这篇条目")
         self.rev_btn = button("显示文件位置", None, lambda: self.reveal.emit(), f"在{file_manager_name()}中显示笔记文件")
         h = hrow(self.seg, None, self.obs_btn, self.zot_btn, self.rev_btn, spacing=8)
@@ -441,7 +457,7 @@ class ResultPage(QWidget):
         ev = r.get("evidence")
         if ev:
             ev_l.addWidget(label("证据档案", "th", wrap=False))
-            ev_l.addWidget(path_label(ev))
+            ev_l.addWidget(path_label(display_path(ev)))
             ev_l.addLayout(hrow(button("打开证据档案", None, lambda: self.opener(QUrl.fromLocalFile(ev)), icon="shield-check"),
                                 None))
         ev_l.addStretch(1)

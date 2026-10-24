@@ -2,6 +2,8 @@
 G6: 外观 moved to the sidebar toggle; parser tokens moved to 模型设置 → 解析器."""
 from __future__ import annotations
 
+from ..platform_words import notification_hint
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QCheckBox, QScrollArea, QGridLayout, QLabel, QVBoxLayout, QWidget
 
@@ -63,7 +65,7 @@ class SettingsPage(QWidget):
                 l.addWidget(sep())
             setrow(l, t, hnt, cb)
         self._sync_notify()
-        l.addWidget(label("第一次通知时 macOS 会询问是否允许；之后可在「系统设置 → 通知」里修改。拒绝后界面内照常提示。", "sub"))
+        l.addWidget(label(notification_hint(), "sub"))
         lay.addWidget(c)
 
         self.zotero = ZoteroSetupCard(cfg, cfg_error, detect_fn=zotero_detect, opener=zotero_opener, cfg_path=cfg_path)

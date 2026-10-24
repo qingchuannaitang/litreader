@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (QApplication, QButtonGroup, QFileDialog, QHBoxLay
                                QPushButton, QStackedWidget, QSystemTrayIcon, QVBoxLayout, QWidget)
 
 from .. import __version__, appconfig
+from ..platform_words import shortcut
 from ..errors import LitError
 from . import avatar as av
 from . import bridge, runner, theme
@@ -149,7 +150,7 @@ class MainWindow(QMainWindow):
         sub.setAlignment(Qt.AlignCenter)
         v.addWidget(sub)
         v.addSpacing(16)
-        nb = button("  新的精读", "new", self.new_reading, "回到主页开始新的一篇（⌘N）", icon="plus")
+        nb = button("  新的精读", "new", self.new_reading, f"回到主页开始新的一篇（{shortcut('N')}）", icon="plus")
         theme.shadow(nb)
         v.addWidget(nb)
         v.addSpacing(12)
