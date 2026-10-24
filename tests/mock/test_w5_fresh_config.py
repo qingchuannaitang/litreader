@@ -23,7 +23,7 @@ def test_bundled_example_matches_repo_example_and_has_no_personal_values():
     assert txt == (ROOT / "config.example.toml").read_text("utf-8")
     d = tomllib.loads(txt)
     assert d["vault"]["root"] == ""
-    assert "/Users/doctor" not in txt and "qq.com" not in txt.lower()
+    assert not __import__("re").search(r"/Users/(?!<)", txt) and "qq.com" not in txt.lower()
 
 
 def test_ensure_creates_once_and_never_overwrites(_hermetic_default_config, monkeypatch, tmp_path):
