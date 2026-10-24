@@ -74,7 +74,7 @@ def test_card_field_resolved_path_picker_and_save(app, tmp_path, monkeypatch):
     picked = {"p": str(tmp_path / "elsewhere")}
     card = ObsidianCard(cfg, detect=lambda: [], folder_picker=lambda start: picked["p"])
     assert card.out.text() == "_litreader_试运行"
-    assert card.papers.text() == f"{v}/_litreader_试运行/论文库/"
+    assert card.papers.text() == __import__("litreader.platform_words", fromlist=["x"]).display_path(f"{v}/_litreader_试运行/论文库/")
     assert card.pending is None                                  # unchanged -> nothing to save
     warned = []
     monkeypatch.setattr(QMessageBox, "warning", lambda *a, **k: warned.append(a))
@@ -82,7 +82,7 @@ def test_card_field_resolved_path_picker_and_save(app, tmp_path, monkeypatch):
     assert warned and card.out.text() == "_litreader_试运行"
     picked["p"] = str(v / "litreader")
     card._pick_out()
-    assert card.out.text() == "litreader" and card.papers.text() == f"{v}/litreader/论文库/"
+    assert card.out.text() == "litreader" and card.papers.text() == __import__("litreader.platform_words", fromlist=["x"]).display_path(f"{v}/litreader/论文库/")
     assert card.pending and any("output_dir" in c for c in card.pending[1])
     card._save(confirm=lambda: True)
     assert appconfig.load(str(cfg.path)).dry_run_root == v / "litreader"
