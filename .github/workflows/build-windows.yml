@@ -4,7 +4,6 @@ on:
   workflow_dispatch:
   push:
     tags: ["v*"]
-    branches: [w4]   # TEMP (W4 testing only; workflow_dispatch needs the file on main) — remove before merge
 
 permissions:
   contents: read
